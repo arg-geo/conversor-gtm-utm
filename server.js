@@ -1,0 +1,108 @@
+const express = require('express');
+const cors = require('cors');
+const proj4 = require('proj4');
+
+const app = express();
+
+app.use(cors());
+app.use(express.json({ limit: '50mb' }));
+
+// Definiciones de Sistemas de Coordenadas
+const CRS_DEFS = {
+    'WGS84': 'EPSG:4326',
+    'GTM': '+proj=tmerc +lat_0=0 +lon_0=-90.5 +k=0.9998 +x_0=500000 +y_0=0 +ellps=WGS84 +units=m +no_defs',
+    'UTM15_WGS84': '+proj=utm +zone=15 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
+    'UTM16_WGS84': '+proj=utm +zone=16 +ellps=WGS84 +datum=WGS84 +units=m +no_defs',
+    // Parámetros de transformación estándar de tres elementos para NAD27 en Centroamérica
+    'UTM15_NAD27': '+proj=utm +zone=15 +ellps=clrk66 +towgs84=0,125,194,0,0,0,0 +units=m +no_defs',
+    'UTM16_NAD27': '+proj=utm +zone=16 +ellps=clrk66 +towgs84=0,125,194,0,0,0,0 +units=m +no_defs'
+};
+
+// Validaciones geográficas estrictas para el territorio de Guatemala
+function validarPuntoWGS84(lon, lat) {
+    return (lat >= 13.5 && lat <= 18.0 && lon >= -92.5 && lon <= -88.0);
+}
+
+// Determinar zona UTM de forma automática según la longitud
+function obtenerZonaUTM(lon) {
+    return lon < -90.0 ? '15' : '16';
+}
+
+// Orquestador de transformaciones matemáticas
+function transformarCoordenadas(punto, desde, hasta) {
+    let lon, lat;
+    let x_in = parseFloat(punto.c1);
+    let y_in = parseFloat(punto.c2);
+
+    if (isNaN(x_in) || isNaN(y_in)) return { error: 'ERROR_VALIDACIÓN' };
+
+    try {
+        // --- PASO 1: Proyectar todo a Geográficas WGS84 (Punto de control intermedio) ---
+        if (desde === 'WGS84') {
+            lon = x_in;
+            lat = y_in;
+        } else if (desde === 'GTM') {
+            if (x_in < 300000 || x_in > 750000 || y_in < 1500000 || y_in > 2000000) return { error: 'ERROR_VALIDACIÓN' };
+            const geo = proj4(CRS_DEFS['GTM'], CRS_DEFS['WGS84'], [x_in, y_in]);
+            lon = geo[0]; lat = geo[1];
+        } else {
+            // Sistemas UTM (Requieren detectar o forzar la zona)
+            const zona = punto.zona || '15'; 
+            const crsOrig = CRS_DEFS[`${desde}_${zona}`];
+            if (!crsOrig) return { error: 'ERROR_VALIDACIÓN' };
+            
+            const geo = proj4(crsOrig, CRS_DEFS['WGS84'], [x_in, y_in]);
+            lon = geo[0]; lat = geo[1];
+        }
+
+        // Validar que el re-cálculo base caiga dentro de Guatemala
+        if (!validarPuntoWGS84(lon, lat)) return { error: 'ERROR_VALIDACIÓN' };
+
+        // --- PASO 2: Transformar desde WGS84 al sistema de destino solicitado ---
+        let c1_out, c2_out;
+        let zona_out = obtenerZonaUTM(lon);
+
+        if (hasta === 'WGS84') {
+            c1_out = lon.toFixed(15);
+            c2_out = lat.toFixed(15);
+        } else if (hasta === 'GTM') {
+            const gtm = proj4(CRS_DEFS['WGS84'], CRS_DEFS['GTM'], [lon, lat]);
+            c1_out = gtm[0].toFixed(3);
+            c2_out = gtm[1].toFixed(3);
+        } else {
+            // Destinos UTM
+            const crsDest = CRS_DEFS[`${hasta}_${zona_out}`];
+            const utm = proj4(CRS_DEFS['WGS84'], crsDest, [lon, lat]);
+            c1_out = utm[0].toFixed(3);
+            c2_out = utm[1].toFixed(3);
+        }
+
+        return { c1: c1_out, c2: c2_out, zona: zona_out, estado: 'OK' };
+
+    } catch (err) {
+        return { error: 'ERROR_CRÍTICO' };
+    }
+}
+
+// ENDPOINT SINGLE: Procesamiento Individual
+app.post('/api/convertir-individual', (req, res) => {
+    const { punto, desde, hasta } = req.body;
+    if (!punto || !desde || !hasta) return res.status(400).json({ error: 'Parámetros insuficientes.' });
+    
+    const resultado = transformarCoordenadas(punto, desde, hasta);
+    res.json({ exito: true, datos: [resultado] });
+});
+
+// ENDPOINT BATCH: Procesamiento por Lotes
+app.post('/api/convertir-lote', (req, res) => {
+    const { coordenadas, desde, hasta } = req.body;
+    if (!coordenadas || !Array.isArray(coordenadas) || !desde || !hasta) {
+        return res.status(400).json({ error: 'Formato o parámetros inválidos.' });
+    }
+
+    const resultados = coordenadas.map(punto => transformarCoordenadas(punto, desde, hasta));
+    res.json({ exito: true, datos: resultados });
+});
+
+const PORT = process.env.PORT || 3000;
+app.listen(PORT, () => console.log(`Servidor de geoprocesamiento activo en puerto ${PORT}`));

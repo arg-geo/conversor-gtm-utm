@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Conversor de Coordenadas Multirregión - Guatemala</title>
+    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
+    <style>
+        .tab-active { border-bottom-color: #1e3a8a; color: #1e3a8a; font-weight: 600; background-color: #ffffff; }
+    </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex flex-col">
+
+    <header class="bg-blue-900 text-white shadow-md p-5 text-center">
+        <h1 class="text-2xl md:text-3xl font-bold">Conversor Cartográfico de Guatemala</h1>
+        <p class="text-blue-200 text-sm mt-1">Sistemas Soportados: GTM, Geográficas WGS84, UTM WGS84 y UTM NAD27</p>
+    </header>
+
+    <main class="max-w-4xl w-full mx-auto p-4 md:p-6 flex-grow">
+        <div class="bg-white rounded-xl shadow-xl overflow-hidden border border-slate-200">
+            
+            <div class="flex border-b border-slate-200 bg-slate-100 text-sm md:text-base">
+                <button id="tabIndividual" onclick="switchTab('individual')" class="w-1/2 py-3 text-center font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition tab-active cursor-pointer">
+                    ⚡ Conversión Individual Multiparámetro
+                </button>
+                <button id="tabLotes" onclick="switchTab('lotes')" class="w-1/2 py-3 text-center font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700 transition text-blue-700 font-semibold cursor-pointer">
+                    📂 Procesamiento por Lotes (CSV)
+                </button>
+            </div>
+
+            <div class="p-6">
+                <div id="panelIndividual">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-5 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Sistema de Origen</label>
+                            <select id="selectDesde" onchange="adaptarFormularioIndividual()" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500">
+                                <option value="WGS84">Geográficas: WGS84 (Lat / Lon)</option>
+                                <option value="GTM" selected>Proyectadas: GTM (Guatemala Transversa Mercator)</option>
+                                <option value="UTM_WGS84">Proyectadas: UTM WGS84 (Zonas 15N/16N)</option>
+                                <option value="UTM_NAD27">Proyectadas: UTM NAD27 (Cartografía Histórica)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Sistema de Destino</label>
+                            <select id="selectHasta" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500">
+                                <option value="WGS84" selected>Geográficas: WGS84 (Lat / Lon)</option>
+                                <option value="GTM">Proyectadas: GTM (Guatemala Transversa Mercator)</option>
+                                <option value="UTM_WGS84">Proyectadas: UTM WGS84 (Zonas 15N/16N)</option>
+                                <option value="UTM_NAD27">Proyectadas: UTM NAD27 (Cartografía Histórica)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div>
+                            <label id="lblC1" class="block text-sm font-medium text-slate-700 mb-1">Coordenada Este (X)</label>
+                            <input type="text" id="txtC1" placeholder="474885.000" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm">
+                        </div>
+                        <div>
+                            <label id="lblC2" class="block text-sm font-medium text-slate-700 mb-1">Coordenada Norte (Y)</label>
+                            <input type="text" id="txtC2" placeholder="1609590.000" class="w-full px-3 py-2 border border-slate-300 rounded-lg focus:ring-2 focus:ring-blue-500 font-mono text-sm">
+                        </div>
+                        <div id="wrapperZona" class="hidden">
+                            <label class="block text-sm font-medium text-slate-700 mb-1">Zona UTM de Origen</label>
+                            <select id="txtZona" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm focus:ring-2 focus:ring-blue-500 font-mono">
+                                <option value="15">Zona 15 Norte (Centro / Occidente)</option>
+                                <option value="16">Zona 16 Norte (Oriente)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button onclick="ejecutarConversionIndividual()" class="w-full mt-5 bg-blue-700 hover:bg-blue-800 text-white font-medium py-2.5 px-4 rounded-lg transition shadow-md cursor-pointer">
+                        Calcular Transformación Geodésica
+                    </button>
+                </div>
+
+                <div id="panelLotes" class="hidden">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Origen del Archivo</label>
+                            <select id="selectLoteDesde" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="WGS84">WGS84 (Encabezados: c1=lon, c2=lat)</option>
+                                <option value="GTM" selected>GTM (Encabezados: c1=este, c2=norte)</option>
+                                <option value="UTM_WGS84">UTM WGS84 (Encabezados: c1=este, c2=norte, zona=zona)</option>
+                                <option value="UTM_NAD27">UTM NAD27 (Encabezados: c1=este, c2=norte, zona=zona)</option>
+                            </select>
+                        </div>
+                        <div>
+                            <label class="block text-xs font-bold text-slate-600 uppercase mb-1">Destino Requerido</label>
+                            <select id="selectLoteHasta" class="w-full px-3 py-2 border border-slate-300 rounded-lg bg-white text-sm">
+                                <option value="WGS84" selected>Geográficas: WGS84</option>
+                                <option value="GTM">Proyectadas: GTM</option>
+                                <option value="UTM_WGS84">Proyectadas: UTM WGS84</option>
+                                <option value="UTM_NAD27">Proyectadas: UTM NAD27</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="bg-amber-50 border border-amber-200 rounded-lg p-3 mb-4 text-xs text-amber-900">
+                        <strong>📌 Formato de Encabezados CSV:</strong> Estructure las columnas de su archivo usando exactamente las etiquetas en minúsculas: <code class="bg-amber-100 px-1 rounded font-mono">c1</code> y <code class="bg-amber-100 px-1 rounded font-mono">c2</code>. Si procesa orígenes UTM, agregue obligatoriamente una columna llamada <code class="bg-amber-100 px-1 rounded font-mono">zona</code> (con valores 15 o 16).
+                    </div>
+
+                    <div class="space-y-3">
+                        <input type="file" id="csvFile" accept=".csv" class="w-full text-sm text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-lg file:border-0 file:bg-blue-50 file:text-blue-700 file:hover:bg-blue-100 cursor-pointer">
+                        <button onclick="procesarLoteCSV()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-medium py-2.5 rounded-lg text-sm transition shadow-md cursor-pointer">
+                            ⚙️ Validar y Ejecutar Conversión Masiva
+                        </button>
+                    </div>
+
+                    <div id="loteResultadosBox" class="mt-6 border border-slate-200 rounded-lg hidden">
+                        <div class="bg-slate-100 p-3 border-b border-slate-200 flex justify-between items-center">
+                            <span class="text-sm font-bold text-slate-700" id="loteTitulo">Registros procesados</span>
+                            <button id="btnDescargarCSV" class="bg-slate-800 hover:bg-slate-900 text-white text-xs font-medium py-1.5 px-3 rounded cursor-pointer transition">
+                                📥 Descargar CSV Resuelto
+                            </button>
+                        </div>
+                        <div class="overflow-x-auto max-h-60 text-xs font-mono">
+                            <table class="w-full text-left border-collapse" id="tablaPreview"></table>
+                        </div>
+                    </div>
+                </div>
+
+                <div id="resultadoBox" class="mt-6 p-4 rounded-lg border hidden">
+                    <h3 id="resultadoTitulo" class="text-sm font-bold uppercase tracking-wider mb-2">Resultados Calculados</h3>
+                    <div id="resultadoContenido" class="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm"></div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <footer class="bg-slate-800 text-slate-400 py-4 text-xs px-4 mt-auto border-t border-slate-700 text-center">
+        <div class="max-w-4xl mx-auto space-y-2">
+            <p>Soporte y Motor de Cálculo Geodésico desarrollado por <strong>MSc Aldo González</strong> | © 2026</p>
+        </div>
+    </footer>
+
+    <script>
+        const BASE_URL_API = "https://conversor-gtm-backend.onrender.com/api";
+        let csvResueltoTexto = "";
+
+        function formatearMillares(valor, esGeografica) {
+            const numero = parseFloat(valor);
+            if (isNaN(numero)) return valor;
+            let digitos = esGeografica ? 12 : 3;
+            return numero.toLocaleString('en-US', { minimumFractionDigits: digitos, maximumFractionDigits: digitos });
+        }
+
+        function switchTab(tab) {
+            document.getElementById('tabIndividual').classList.remove('tab-active');
+            document.getElementById('tabLotes').classList.remove('tab-active');
+            document.getElementById('panelIndividual').classList.add('hidden');
+            document.getElementById('panelLotes').classList.add('hidden');
+            document.getElementById('resultadoBox').classList.add('hidden');
+
+            if (tab === 'individual') {
+                document.getElementById('tabIndividual').classList.add('tab-active');
+                document.getElementById('panelIndividual').classList.remove('hidden');
+            } else {
+                document.getElementById('tabLotes').classList.add('tab-active');
+                document.getElementById('panelLotes').classList.remove('hidden');
+            }
+        }
+
+        function adaptarFormularioIndividual() {
+            const desde = document.getElementById('selectDesde').value;
+            const lblC1 = document.getElementById('lblC1');
+            const lblC2 = document.getElementById('lblC2');
+            const txtC1 = document.getElementById('txtC1');
+            const txtC2 = document.getElementById('txtC2');
+            const wrapperZona = document.getElementById('wrapperZona');
+
+            if (desde === 'WGS84') {
+                lblC1.innerText = "Longitud (Oeste - X)"; txtC1.placeholder = "-90.7332";
+                lblC2.innerText = "Latitud (Norte - Y)"; txtC2.placeholder = "14.5573";
+                wrapperZona.classList.add('hidden');
+            } else {
+                lblC1.innerText = "Coordenada Este (X)"; txtC1.placeholder = "474885.000";
+                lblC2.innerText = "Coordenada Norte (Y)"; txtC2.placeholder = "1609590.000";
+                
+                if (desde.startsWith('UTM')) {
+                    wrapperZona.classList.remove('hidden');
+                } else {
+                    wrapperZona.classList.add('hidden');
+                }
+            }
+        }
+
+        async function ejecutarConversionIndividual() {
+            const desde = document.getElementById('selectDesde').value;
+            const hasta = document.getElementById('selectHasta').value;
+            const c1 = document.getElementById('txtC1').value.trim();
+            const c2 = document.getElementById('txtC2').value.trim();
+            const zona = document.getElementById('txtZona').value;
+
+            if(!c1 || !c2) { alert("Complete los valores numéricos de entrada."); return; }
+
+            const resBox = document.getElementById('resultadoBox');
+            const resContenido = document.getElementById('resultadoContenido');
+            
+            try {
+                resContenido.innerHTML = "<p class='col-span-2 text-center italic text-slate-500'>Ejecutando operaciones algebraicas en servidor...</p>";
+                resBox.className = "mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200";
+                resBox.classList.remove('hidden');
+
+                const response = await fetch(`${BASE_URL_API}/convertir-individual`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ punto: { c1, c2, zona }, desde, hasta })
+                });
+
+                const r = await response.json();
+                if (!r.exito || r.datos[0].error) {
+                    resContenido.innerHTML = `<p class='col-span-2 text-red-600 font-medium text-center'>⚠️ Error: Coordenadas fuera de la cobertura de Guatemala o formato no válido.</p>`;
+                    return;
+                }
+
+                const output = r.datos[0];
+                const esGeo = (hasta === 'WGS84');
+                
+                let etiqueta1 = esGeo ? "Longitud (WGS84)" : `${hasta} Este (X)`;
+                let etiqueta2 = esGeo ? "Latitud (WGS84)" : `${hasta} Norte (Y)`;
+
+                resContenido.innerHTML = `
+                    <div class="bg-white p-3 rounded border shadow-xs">
+                        <span class="block text-xs font-semibold text-slate-500 uppercase">${etiqueta1}</span>
+                        <span class="text-sm font-mono font-bold text-slate-800">${formatearMillares(output.c1, esGeo)}${esGeo?'°':' m'}</span>
+                    </div>
+                    <div class="bg-white p-3 rounded border shadow-xs">
+                        <span class="block text-xs font-semibold text-slate-500 uppercase">${etiqueta2}</span>
+                        <span class="text-sm font-mono font-bold text-slate-800">${formatearMillares(output.c2, esGeo)}${esGeo?'°':' m'}</span>
+                        ${!esGeo ? `<span class="block text-[10px] text-blue-600 mt-1 font-sans font-medium">Zona UTM detectada: ${output.zona}N</span>` : ''}
+                    </div>`;
+            } catch (err) {
+                alert("Error de red o interrupción del servicio.");
+            }
+        }
+
+        function procesarLoteCSV() {
+            const desde = document.getElementById('selectLoteDesde').value;
+            const hasta = document.getElementById('selectLoteHasta').value;
+            const fileInput = document.getElementById('csvFile');
+            
+            if (!fileInput.files.length) { alert("Seleccione un archivo CSV."); return; }
+
+            const file = fileInput.files[0];
+            const reader = new FileReader();
+
+            reader.onload = async function(e) {
+                const text = e.target.result;
+                let filas = text.split(/\r?\n/).map(f => f.trim()).filter(f => f !== "");
+                if (filas.length < 2) { alert("El archivo está vacío."); return; }
+
+                const separador = filas[0].includes(";") ? ";" : ",";
+                const encabezados = filas[0].split(separador).map(h => h.trim().toLowerCase());
+
+                let idxC1 = encabezados.indexOf("c1"), idxC2 = encabezados.indexOf("c2"), idxZona = encabezados.indexOf("zona");
+
+                if (idxC1 === -1 || idxC2 === -1) { alert("Error: No se hallaron las columnas 'c1' y 'c2'."); return; }
+
+                let payloadCoordenadas = [];
+                for (let i = 1; i < filas.length; i++) {
+                    let celdas = filas[i].split(separador).map(c => c.trim());
+                    if (celdas.length <= 1 && celdas[0] === "") continue;
+                    payloadCoordenadas.push({
+                        c1: celdas[idxC1],
+                        c2: celdas[idxC2],
+                        zona: idxZona !== -1 ? celdas[idxZona] : "15",
+                        _original: celdas
+                    });
+                }
+
+                try {
+                    document.getElementById('loteResultadosBox').classList.remove('hidden');
+                    document.getElementById('tablaPreview').innerHTML = "<tr><td class='p-4 text-center italic text-slate-500'>Procesando paquete masivo de datos...</td></tr>";
+
+                    const response = await fetch(`${BASE_URL_API}/convertir-lote`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ coordenadas: payloadCoordenadas, desde, hasta })
+                    });
+
+                    const r = await response.json();
+                    if (!r.exito) { alert("Fallo crítico en la matriz de conversión."); return; }
+
+                    let outHeaders = [...filas[0].split(separador).map(h => h.trim())];
+                    outHeaders.push(`Salida_C1`, `Salida_C2`, `Zona_Calculada`, `Estado`);
+
+                    let csvLineas = [outHeaders.join(separador)];
+                    let htmlTable = `<tr class="bg-slate-200 font-bold"><td class="p-2 border">Fila</td>${outHeaders.map(h => `<td class="p-2 border">${h}</td>`).join("")}</tr>`;
+
+                    let okCount = 0, errCount = 0;
+                    const esGeo = (hasta === 'WGS84');
+
+                    r.datos.forEach((punto, index) => {
+                        let rowOut = [...payloadCoordenadas[index]._original];
+                        if (punto.estado === 'OK') {
+                            okCount++;
+                            rowOut.push(punto.c1, punto.c2, punto.zona, "OK");
+                        } else {
+                            errCount++;
+                            rowOut.push("-", "-", "-", punto.error || "ERROR");
+                        }
+                        csvLineas.push(rowOut.join(separador));
+
+                        if (index < 15) {
+                            let trStyle = punto.estado !== 'OK' ? 'bg-red-50 text-red-700' : 'hover:bg-slate-50';
+                            let rowPantalla = [...rowOut];
+                            if (punto.estado === 'OK') {
+                                rowPantalla[rowPantalla.length - 4] = formatearMillares(punto.c1, esGeo);
+                                rowPantalla[rowPantalla.length - 3] = formatearMillares(punto.c2, esGeo);
+                            }
+                            htmlTable += `<tr class="${trStyle}"><td class="p-2 border text-slate-400 text-center">${index + 1}</td>${rowPantalla.map(c => `<td class="p-2 border">${c}</td>`).join("")}</tr>`;
+                        }
+                    });
+
+                    csvResueltoTexto = csvLineas.join("\n");
+                    document.getElementById('tablaPreview').innerHTML = htmlTable;
+                    document.getElementById('loteTitulo').innerText = `Éxito: ${okCount} | Fallidos: ${errCount} | Total: ${payloadCoordenadas.length}`;
+
+                    document.getElementById('btnDescargarCSV').onclick = function() {
+                        const blob = new Blob([csvResueltoTexto], { type: 'text/csv;charset=utf-8;' });
+                        const link = document.createElement("a");
+                        link.href = URL.createObjectURL(blob);
+                        link.download = `CONV_GUATEMALA_${Date.now()}.csv`;
+                        link.click();
+                    };
+
+                } catch (e) {
+                    alert("Pérdida de comunicación con el backend.");
+                }
+            };
+            reader.readAsText(file);
+        }
+    </script>
+</body>
+</html>
