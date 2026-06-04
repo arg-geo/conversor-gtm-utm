@@ -4,7 +4,7 @@
     <script async src="https://www.googletagmanager.com/gtag/js?id=G-RXKYXLD05E"></script>
     <script>
       window.dataLayer = window.dataLayer || [];
-      function gtag()){dataLayer.push(arguments);}
+      function gtag(){dataLayer.push(arguments);}
       gtag('js', new Date());
       gtag('config', 'G-RXKYXLD05E');
     </script>
@@ -163,8 +163,8 @@
         </div>
     </footer>
 
-<script>
-        // Declaración unificada de la URL del Backend Oculto
+    <script>
+        // Declaración unificada de la URL del Backend
         const BASE_URL_API = "https://conversor-gtm-backend.onrender.com/api";
         let csvDescargaTexto = "";
 
@@ -274,31 +274,42 @@
             const container = document.getElementById('contenedorResultados');
             const resTitulo = document.getElementById('resultadoTitulo');
 
+            // Sincronización exacta con las rutas del server.js original (wgs-to-gtm o gtm-to-wgs)
+            let endpoint = (desde === 'WGS84') ? 'wgs-to-gtm' : 'gtm-to-wgs';
+            let payload = {};
+
+            if (desde === 'WGS84') {
+                payload = { coordenadas: [{ lat: c2, lon: c1, desde, hasta, zona }] };
+            } else {
+                payload = { coordenadas: [{ este: c1, norte: c2, desde, hasta, zona }] };
+            }
+
             try {
                 container.innerHTML = "<p class='col-span-2 text-slate-500 italic p-2 text-center animate-pulse'>Procesando cálculo geodésico en el servidor seguro...</p>";
                 boxRes.classList.remove('hidden');
 
-                // Llamado corregido usando BASE_URL_API
-                const res = await fetch(`${BASE_URL_API}/convertir-individual`, {
+                const res = await fetch(`${BASE_URL_API}/${endpoint}`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ c1, c2, desde, hasta, zona })
+                    body: JSON.stringify(payload)
                 });
 
                 const r = await res.json();
-                if (!r.exito || (r.datos && r.datos.error)) {
+                
+                // Validación de error en la respuesta de la matriz del servidor
+                if (!r.exito || !r.datos || r.datos.length === 0 || r.datos[0].error === 'ERROR_VALIDACIÓN') {
                     container.innerHTML = `<p class='col-span-2 text-red-600 font-medium p-2 text-center'>⚠️ Entrada rechazada: Fuera de los límites oficiales de la República de Guatemala.</p>`;
                     return;
                 }
 
-                const out = r.datos;
+                const out = r.datos[0];
 
                 if (hasta === 'WGS84') {
                     boxRes.className = "mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-100";
                     resTitulo.className = "text-sm font-bold text-emerald-900 uppercase tracking-wider mb-2";
                     
-                    let lonVal = parseFloat(out.c1);
-                    let latVal = parseFloat(out.c2);
+                    let lonVal = parseFloat(out.longitud);
+                    let latVal = parseFloat(out.latitud);
                     
                     container.innerHTML = `
                         <div class="bg-white p-3 rounded border border-slate-100 shadow-xs">
@@ -318,11 +329,11 @@
                     container.innerHTML = `
                         <div class="bg-white p-3 rounded border border-slate-100 shadow-xs">
                             <span class="block text-xs font-semibold text-slate-500 uppercase">${hasta} Este (X)</span>
-                            <span class="text-base font-mono font-bold text-slate-800">${formatearMillares(out.c1)} m</span>
+                            <span class="text-base font-mono font-bold text-slate-800">${formatearMillares(out.este)} m</span>
                         </div>
                         <div class="bg-white p-3 rounded border border-slate-100 shadow-xs">
                             <span class="block text-xs font-semibold text-slate-500 uppercase">${hasta} Norte (Y)</span>
-                            <span class="text-base font-mono font-bold text-slate-800">${formatearMillares(out.c2)} m</span>
+                            <span class="text-base font-mono font-bold text-slate-800">${formatearMillares(out.norte)} m</span>
                         </div>`;
                 }
 
@@ -354,27 +365,38 @@
 
                 if (iC1 === -1 || iC2 === -1) { alert("Error: Columnas 'c1' y 'c2' no encontradas en el encabezado."); return; }
 
-                let payload = [];
+                let coordenadasPayload = [];
                 for (let i = 1; i < lineas.length; i++) {
                     let splitRow = lineas[i].split(separador).map(r => r.trim());
                     if (splitRow.length <= 1 && splitRow[0] === "") continue;
-                    payload.push({
-                        c1: splitRow[iC1],
-                        c2: splitRow[iC2],
-                        zona: iZ !== -1 ? splitRow[iZ] : null,
-                        _raw: splitRow
-                    });
+                    
+                    if (desde === 'WGS84') {
+                        coordenadasPayload.push({
+                            lon: splitRow[iC1],
+                            lat: splitRow[iC2],
+                            zona: iZ !== -1 ? splitRow[iZ] : null,
+                            _raw: splitRow
+                        });
+                    } else {
+                        coordenadasPayload.push({
+                            este: splitRow[iC1],
+                            norte: splitRow[iC2],
+                            zona: iZ !== -1 ? splitRow[iZ] : null,
+                            _raw: splitRow
+                        });
+                    }
                 }
+
+                let endpoint = (desde === 'WGS84') ? 'wgs-to-gtm' : 'gtm-to-wgs';
 
                 try {
                     document.getElementById('boxLoteResultados').classList.remove('hidden');
                     document.getElementById('tblPreview').innerHTML = "<tr><td class='p-4 text-center italic text-slate-500'>Comunicando lotes masivos con el servidor...</td></tr>";
 
-                    // Llamado corregido usando BASE_URL_API
-                    const res = await fetch(`${BASE_URL_API}/convertir-lote`, {
+                    const res = await fetch(`${BASE_URL_API}/${endpoint}`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ coordenadas: payload, desde, hasta })
+                        body: JSON.stringify({ coordenadas: coordenadasPayload })
                     });
 
                     const r = await res.json();
@@ -385,16 +407,19 @@
                     let ok = 0, err = 0;
 
                     r.datos.forEach((output, idx) => {
-                        let finalRowCSV = [...payload[idx]._raw];
-                        let finalRowPantalla = [...payload[idx]._raw];
+                        let finalRowCSV = [...coordenadasPayload[idx]._raw];
+                        let finalRowPantalla = [...coordenadasPayload[idx]._raw];
 
                         if (output.estado === 'OK') {
                             ok++;
-                            let c1_raw = hasta === 'WGS84' ? parseFloat(output.c1).toFixed(10) : parseFloat(output.c1).toFixed(3);
-                            let c2_raw = hasta === 'WGS84' ? parseFloat(output.c2).toFixed(10) : parseFloat(output.c2).toFixed(3);
+                            let val1 = output.longitud ? output.longitud : output.este;
+                            let val2 = output.latitud ? output.latitud : output.norte;
+
+                            let c1_raw = hasta === 'WGS84' ? parseFloat(val1).toFixed(10) : parseFloat(val1).toFixed(3);
+                            let c2_raw = hasta === 'WGS84' ? parseFloat(val2).toFixed(10) : parseFloat(val2).toFixed(3);
                             
-                            let c1_pan = hasta === 'WGS84' ? c1_raw : formatearMillares(output.c1);
-                            let c2_pan = hasta === 'WGS84' ? c2_raw : formatearMillares(output.c2);
+                            let c1_pan = hasta === 'WGS84' ? c1_raw : formatearMillares(val1);
+                            let c2_pan = hasta === 'WGS84' ? c2_raw : formatearMillares(val2);
 
                             finalRowCSV.push(c1_raw, c2_raw, "OK");
                             finalRowPantalla.push(c1_pan, c2_pan, "OK");
@@ -418,7 +443,7 @@
 
                     csvDescargaTexto = csvLineas.join("\n");
                     document.getElementById('tblPreview').innerHTML = html;
-                    document.getElementById('txtLoteStatus').innerText = `Procesados: ${ok} válidos | ${err} rechazados de ${payload.length} totales.`;
+                    document.getElementById('txtLoteStatus').innerText = `Procesados: ${ok} válidos | ${err} rechazados de ${coordenadasPayload.length} totales.`;
 
                     document.getElementById('btnDescargarCSV').onclick = function() {
                         const blob = new Blob([csvDescargaTexto], { type: 'text/csv;charset=utf-8;' });
