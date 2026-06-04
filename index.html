@@ -163,8 +163,9 @@
         </div>
     </footer>
 
-    <script>
-        const API_URL = "https://conversor-gtm-backend.onrender.com/api";
+<script>
+        // Declaración unificada de la URL del Backend Oculto
+        const BASE_URL_API = "https://conversor-gtm-backend.onrender.com/api";
         let csvDescargaTexto = "";
 
         // Formateador estético para la visualización en pantalla de metros (con comas en miles)
@@ -273,44 +274,24 @@
             const container = document.getElementById('contenedorResultados');
             const resTitulo = document.getElementById('resultadoTitulo');
 
-            let endpoint = desde === 'WGS84' ? 'wgs-to-gtm' : 'gtm-to-wgs';
-            // Ajuste temporal para mapear a los endpoints existentes del server original si no es GTM completo
-            if (desde.startsWith('UTM') || hasta.startsWith('UTM') || desde === 'UTM_NAD27' || hasta === 'UTM_NAD27') {
-                endpoint = 'wgs-to-gtm'; // El backend unificado centralizará los flujos cruzados
-            }
-
             try {
                 container.innerHTML = "<p class='col-span-2 text-slate-500 italic p-2 text-center animate-pulse'>Procesando cálculo geodésico en el servidor seguro...</p>";
                 boxRes.classList.remove('hidden');
 
-                // Para compatibilidad con el backend previo estructuramos el array de coordenadas
-                let payload = {};
-                if (desde === 'WGS84') {
-                    payload = { coordenadas: [{ lat: c2, lon: c1, desde, hasta, zona }] };
-                } else {
-                    payload = { coordenadas: [{ este: c1, norte: c2, desde, hasta, zona }] };
-                }
-
-                // Si estás usando la ruta genérica de unificación individual provista anteriormente:
-                const esRutaUnificada = true; 
-                const urlFetch = esRutaUnificada ? `${API_URL}/convertir-individual` : `${API_URL}/${endpoint}`;
-                
-                const cuerpoPeticion = esRutaUnificada ? { c1, c2, desde, hasta, zona } : payload;
-
-                const res = await fetch(urlFetch, {
+                // Llamado corregido usando BASE_URL_API
+                const res = await fetch(`${BASE_URL_API}/convertir-individual`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(cuerpoPeticion)
+                    body: JSON.stringify({ c1, c2, desde, hasta, zona })
                 });
 
                 const r = await res.json();
-                if (!r.exito || (r.datos && r.datos.error) || (r.datos && r.datos[0] && r.datos[0].error)) {
-                    container.innerHTML = `<p class='col-span-2 text-red-600 font-medium p-2 text-center'>⚠️ Entrada rechazada: Fuera de los límites oficiales de la República de Guatemala o exceso de decimales.</p>`;
+                if (!r.exito || (r.datos && r.datos.error)) {
+                    container.innerHTML = `<p class='col-span-2 text-red-600 font-medium p-2 text-center'>⚠️ Entrada rechazada: Fuera de los límites oficiales de la República de Guatemala.</p>`;
                     return;
                 }
 
-                // Normalización de la lectura de respuesta según la variante de backend acoplada
-                const out = r.datos.c1 ? r.datos : (r.datos[0].este ? { c1: r.datos[0].este, c2: r.datos[0].norte } : { c1: r.datos[0].longitud, c2: r.datos[0].latitud });
+                const out = r.datos;
 
                 if (hasta === 'WGS84') {
                     boxRes.className = "mt-6 p-4 bg-emerald-50 rounded-lg border border-emerald-100";
@@ -322,12 +303,12 @@
                     container.innerHTML = `
                         <div class="bg-white p-3 rounded border border-slate-100 shadow-xs">
                             <span class="block text-xs font-semibold text-slate-500 uppercase">Longitud (WGS84)</span>
-                            <span class="text-base font-mono font-bold text-slate-800 block">${lonVal.toFixed(15)}°</span>
+                            <span class="text-base font-mono font-bold text-slate-800 block">${lonVal.toFixed(10)}°</span>
                             <span class="text-blue-700 text-xs mt-0.5 block">${decADMS(lonVal, false)}</span>
                         </div>
                         <div class="bg-white p-3 rounded border border-slate-100 shadow-xs">
                             <span class="block text-xs font-semibold text-slate-500 uppercase">Latitud (WGS84)</span>
-                            <span class="text-base font-mono font-bold text-slate-800 block">${latVal.toFixed(15)}°</span>
+                            <span class="text-base font-mono font-bold text-slate-800 block">${latVal.toFixed(10)}°</span>
                             <span class="text-blue-700 text-xs mt-0.5 block">${decADMS(latVal, true)}</span>
                         </div>`;
                 } else {
@@ -389,8 +370,8 @@
                     document.getElementById('boxLoteResultados').classList.remove('hidden');
                     document.getElementById('tblPreview').innerHTML = "<tr><td class='p-4 text-center italic text-slate-500'>Comunicando lotes masivos con el servidor...</td></tr>";
 
-                    // Adaptador flexible de envío de lotes hacia el backend unificado
-                    const res = await fetch(`${API_URL}/convertir-lote`, {
+                    // Llamado corregido usando BASE_URL_API
+                    const res = await fetch(`${BASE_URL_API}/convertir-lote`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
                         body: JSON.stringify({ coordenadas: payload, desde, hasta })
@@ -409,11 +390,9 @@
 
                         if (output.estado === 'OK') {
                             ok++;
-                            // Valores crudos para el archivo de descarga CSV (sin comas de millares)
                             let c1_raw = hasta === 'WGS84' ? parseFloat(output.c1).toFixed(10) : parseFloat(output.c1).toFixed(3);
                             let c2_raw = hasta === 'WGS84' ? parseFloat(output.c2).toFixed(10) : parseFloat(output.c2).toFixed(3);
                             
-                            // Valores estéticos con comas de millares únicamente si el destino es métrico plano
                             let c1_pan = hasta === 'WGS84' ? c1_raw : formatearMillares(output.c1);
                             let c2_pan = hasta === 'WGS84' ? c2_raw : formatearMillares(output.c2);
 
@@ -456,7 +435,6 @@
             reader.readAsText(file);
         }
 
-        // Ejecución de carga inicial para setear placeholders correspondientes
         actualizarInterfazIndividual();
     </script>
 </body>
