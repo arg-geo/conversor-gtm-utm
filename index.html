@@ -261,8 +261,8 @@
                 boxRes.className = "border rounded-xl p-4 bg-blue-50 border-blue-200 mt-5";
                 boxRes.classList.remove('hidden');
 
-                // Usando estrictamente BASE_URL_API
-                const res = await fetch(`${BASE_URL_API}/convertir-individual`, {
+                // CORRECCIÓN DE RUTA: Tu backend original usa exactamente '/convertir'
+                const res = await fetch(`${BASE_URL_API}/convertir`, {
                     method: 'POST',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ c1, c2, desde, hasta, zona })
@@ -345,7 +345,6 @@
                     document.getElementById('boxLoteResultados').classList.remove('hidden');
                     document.getElementById('tblPreview').innerHTML = "<tr><td class='p-4 text-center text-slate-500 animate-pulse italic'>Compilando paquete masivo de datos...</td></tr>";
 
-                    // Usando estrictamente BASE_URL_API
                     const res = await fetch(`${BASE_URL_API}/convertir-lote`, {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
@@ -401,7 +400,6 @@
             reader.readAsText(file);
         }
         
-        // Carga inicial
         actualizarInterfazIndividual();
     </script>
 </body>
