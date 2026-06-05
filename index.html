@@ -323,7 +323,7 @@ async function procesarConversionIndividual() {
                         </div>`;
                 }
 
-                // --- VISOR CARTOGRÁFICO CON OPENLAYERS (INMUNE A COMPRESIÓN TAILWIND) ---
+                // --- DETECCIÓN DE COORDENADAS DE CONTROL ---
                 let mapaLat = parseFloat(out.lat_control || out.c2);
                 let mapaLon = parseFloat(out.lon_control || out.c1);
 
@@ -332,60 +332,58 @@ async function procesarConversionIndividual() {
                     mapaLon = parseFloat(out.c1);
                 }
 
-                // Hacer visible el contenedor contenedor general
+                // Hacer visible el bloque contenedor eliminando 'hidden' por completo
                 boxRes.className = "border rounded-xl p-4 bg-slate-50 border-slate-200 mt-5 block";
 
-                // Limpiar el contenedor HTML para evitar duplicaciones físicas de Canvas
-                document.getElementById('map').innerHTML = '';
+                // Vaciar físicamente el contenedor del mapa para eliminar cualquier lienzo previo trabado
+                const mapaDiv = document.getElementById('map');
+                mapaDiv.innerHTML = '';
 
-                // Crear coordenadas proyectadas Web Mercator requeridas por OpenLayers
-                const coordenadasProyectadas = ol.proj.fromLonLat([mapaLon, mapaLat]);
+                // Transformar coordenadas de WGS84 a Web Mercator (proyección nativa de mapas web)
+                const coordProyectadas = ol.proj.fromLonLat([mapaLon, mapaLat]);
 
-                // Instanciar el Mapa en OpenLayers
-                mapaInstancia = new ol.Map({
+                // Instanciar mapa local autónomo
+                const mapaLocal = new ol.Map({
                     target: 'map',
                     layers: [
                         new ol.layer.Tile({
-                            source: new ol.source.OSM() // Capa Base OpenStreetMap estándar
+                            source: new ol.source.OSM()
                         })
                     ],
                     view: new ol.View({
-                        center: coordenadasProyectadas,
+                        center: coordProyectadas,
                         zoom: 14,
                         minZoom: 6,
                         maxZoom: 19
                     }),
-                    controls: [] // Limpiar botones invasivos de zoom
+                    controls: [] // Quita botones de zoom por defecto
                 });
 
-                // Crear marcador geométrico profesional (Pin)
-                const marcadorFeature = new ol.Feature({
-                    geometry: new ol.geom.Point(coordenadasProyectadas)
+                // Crear e inyectar el marcador pin geométrico
+                const featureMarcador = new ol.Feature({
+                    geometry: new ol.geom.Point(coordProyectadas)
                 });
 
-                // Definir estilo estético del marcador
-                marcadorFeature.setStyle(new ol.style.Style({
+                featureMarcador.setStyle(new ol.style.Style({
                     image: new ol.style.Icon({
                         anchor: [0.5, 1],
                         src: 'https://cdn-icons-png.flaticon.com/512/684/684908.png',
-                        scale: 0.06 // Escala fina para el marcador
+                        scale: 0.06
                     })
                 }));
 
-                const vectorSource = new ol.source.Vector({
-                    features: [marcadorFeature]
+                const capaVectorial = new ol.layer.Vector({
+                    source: new ol.source.Vector({
+                        features: [featureMarcador]
+                    })
                 });
 
-                const vectorLayer = new ol.layer.Vector({
-                    source: vectorSource
-                });
+                mapaLocal.addLayer(capaVectorial);
 
-                mapaInstancia.addLayer(vectorLayer);
-
-                // Forzar actualización asíncrona inmediata del Canvas
+                // Forzar al navegador a recalcular el Canvas una vez posicionado en la pantalla
                 setTimeout(() => {
-                    if (mapaInstancia) {
-                        mapaInstancia.updateSize();
+                    if (mapaLocal) {
+                        mapaLocal.updateSize();
                     }
                 }, 100);
 
@@ -394,6 +392,9 @@ async function procesarConversionIndividual() {
                 container.innerHTML = `<p class='text-red-700 font-bold text-center'>Error en los canales de comunicación de red con el backend.</p>`;
             }
         }
+
+
+		
 
 
 
