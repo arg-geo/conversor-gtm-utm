@@ -305,7 +305,8 @@
             }
         }
 
-        function procesarLoteCSV() {
+
+		function procesarLoteCSV() {
             const desde = document.getElementById('loteDesde').value;
             const hasta = document.getElementById('loteHasta').value;
             const fileInput = document.getElementById('fileCSV');
@@ -350,11 +351,8 @@
                     });
 
                     const r = await res.json();
-					
-					
-					const r = await res.json();
                     
-                    
+                    // Condicionar dinámicamente si se incluye la columna Zona
                     const incluyeZona = hasta.startsWith('UTM');
                     let columnasAdicionales = ["Salida_C1", "Salida_C2"];
                     if (incluyeZona) columnasAdicionales.push("Zona");
@@ -366,7 +364,6 @@
                     let html = `<tr class="bg-slate-700 text-white font-bold"><td class="p-2 border">Fila</td>${outCabecera.map(h => `<td class="p-2 border">${h}</td>`).join("")}</tr>`;
                     let ok = 0, err = 0;
 
-                    
                     r.datos.forEach((output, idx) => {
                         let finalRowCSV = [...payload[idx]._raw];
                         let finalRowPantalla = [...payload[idx]._raw];
@@ -379,7 +376,6 @@
                             let c1_pan = hasta === 'WGS84' ? c1_f : formatearMillares(output.c1);
                             let c2_pan = hasta === 'WGS84' ? c2_f : formatearMillares(output.c2);
 
-                            
                             if (incluyeZona) {
                                 finalRowCSV.push(c1_f, c2_f, output.zona, "OK");
                                 finalRowPantalla.push(c1_pan, c2_pan, output.zona, "OK");
@@ -389,7 +385,6 @@
                             }
                         } else {
                             err++;
-                            
                             if (incluyeZona) {
                                 finalRowCSV.push("-", "-", "-", output.error);
                                 finalRowPantalla.push("-", "-", "-", output.error);
@@ -406,8 +401,7 @@
                             html += `<tr class="${estilo}"><td class="p-2 border text-slate-400 text-center">${idx + 1}</td>${finalRowPantalla.map(celda => `<td class="p-2 border">${celda}</td>`).join("")}</tr>`;
                         }
                     });
-					
-					
+
                     if (lineas.length > 16) {
                         html += `<tr><td colspan="${outCabecera.length + 1}" class="p-2 text-center text-slate-400 bg-slate-50 italic">... Muestra limitada a los primeros 15 registros ...</td></tr>`;
                     }
@@ -428,9 +422,11 @@
                     alert("Fallo crítico en los canales de procesamiento masivo.");
                 }
             };
+            // Lector corregido apuntando a fileInput
             reader.readAsText(fileInput.files[0]);
         }
-        
+
+		
         // Carga inicial
         actualizarInterfazIndividual();
     </script>
