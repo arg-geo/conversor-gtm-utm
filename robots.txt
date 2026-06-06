@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://arg-geo.github.io/conversor-gtm-utm/sitemap.xml
