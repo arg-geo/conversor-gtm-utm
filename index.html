@@ -1,794 +1,814 @@
 <!DOCTYPE html>
-<html lang="es-GT">
+<html lang="es">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon" type="image/png" href="favicon.png">
-    <meta name="theme-color" content="#1e40af">
+    <title>Polígonos y Tabla de Azimut</title>
+    
+    <style>
+        /* ===== 1. ESTILOS GENERALES ===== */
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            margin: 0; 
+            padding: 0; 
+            background-color: #f0f4f8; /* Fondo general gris-azul claro que da contraste */
+            color: #333; 
+        }
 
-    <meta name="google-site-verification" content="_TVN5tXrj1VuaQ7k8ocbtDVG3MxB6Hes4ZC5e979Pyo" />
+        /* ===== 2. ENCABEZADO INSTITUCIONAL ===== */
+        .header-institucional {
+            background-color: #0d47a1; /* Azul Marino Intenso */
+            color: #ffffff;
+            text-align: center;
+            padding: 30px 20px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .header-institucional h2 {
+            margin: 0 0 8px 0;
+            font-size: 28px;
+            font-weight: bold;
+            letter-spacing: 0.5px;
+        }
+        .header-institucional p {
+            margin: 0;
+            font-size: 15px;
+            opacity: 0.9;
+        }
 
-    <title>Conversor de Coordenadas WGS84, GTM, UTM WGS84 y UTM NAD27 para Guatemala</title>
-    <meta name="description" content="Conversor gratuito de coordenadas para Guatemala. Transforme coordenadas entre GTM, UTM WGS84, UTM NAD27 y coordenadas geográficas WGS84. Incluye validación territorial y visualización en mapa.">
-    <meta name="keywords" content="GTM Guatemala, coordenadas Guatemala, conversor GTM, conversor UTM Guatemala, UTM WGS84 Guatemala, UTM NAD27 Guatemala, WGS84 Guatemala, transformación de coordenadas, transformación de coordenadas Guatemala, geodesia Guatemala, cartografía Guatemala, SIG Guatemala, GIS Guatemala">
-    <meta name="author" content="MSc Aldo Gonzalez">
-    <meta name="robots" content="index,follow,max-image-preview:large">
-    <meta name="language" content="Spanish">
-    <meta name="geo.region" content="GT">
-    <meta name="geo.placename" content="Guatemala">
-    <link rel="canonical" href="https://arg-geo.github.io/conversor-gtm-utm/">
+        /* ===== 3. CONTENEDOR DE PESTAÑAS (TABS) ===== */
+        .tabs-container {
+            display: flex;
+            justify-content: center;
+            background-color: #ffffff;
+            border-bottom: 2px solid #e2e8f0;
+            max-width: 800px;
+            margin: 30px auto 0 auto;
+            border-radius: 8px 8px 0 0;
+        }
+        .tab {
+            padding: 15px 30px;
+            cursor: pointer;
+            font-weight: 600;
+            color: #64748b;
+            border-bottom: 3px solid transparent;
+            transition: all 0.3s ease;
+            font-size: 15px;
+        }
+        .tab:hover {
+            color: #0d47a1;
+            background-color: #f8fafc;
+        }
+        .tab.active {
+            color: #0d47a1;
+            border-bottom: 3px solid #0d47a1; /* Línea azul en la pestaña activa */
+            background-color: #ffffff;
+        }
 
-    <meta property="og:type" content="website">
-    <meta property="og:title" content="Conversor de Coordenadas GTM, UTM y WGS84 para Guatemala">
-    <meta property="og:description" content="Herramienta gratuita para convertir coordenadas GTM, UTM WGS84, UTM NAD27 y WGS84 para Guatemala.">
-    <meta property="og:locale" content="es_GT">
-    <meta property="og:site_name" content="Conversor GTM Guatemala">
-    <meta property="og:url" content="https://arg-geo.github.io/conversor-gtm-utm/">
-    <meta property="og:image" content="https://arg-geo.github.io/conversor-gtm-utm/preview_v4.jpg">
-    <meta property="og:image:width" content="1200">
-    <meta property="og:image:height" content="630">
-    <meta property="og:image:type" content="image/jpeg">
-    <meta property="og:image:alt" content="Conversor de coordenadas GTM, UTM y WGS84 para Guatemala">
+        /* ===== 4. TARJETA DE CONTENIDO CONTRASTADA ===== */
+        .content {
+            display: none; /* Ocultas por defecto */
+            background: #f8fafc; /* Fondo blanco puro para resaltar del fondo gris */
+            padding: 40px;
+            border-radius: 0 0 8px 8px;
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05); /* Sombra suave de elevación */
+            max-width: 800px;
+            margin: 0 auto 50px auto;
+            box-sizing: border-box;
+        }
+        .content.active { 
+            display: block; /* Solo se muestra la activa */
+        }
 
-    <meta name="twitter:card" content="summary_large_image">
-    <meta name="twitter:title" content="Conversor de Coordenadas GTM, UTM y WGS84 para Guatemala">
-    <meta name="twitter:description" content="Herramienta gratuita para convertir coordenadas GTM, UTM WGS84, UTM NAD27 y WGS84 para Guatemala.">
-    <meta name="twitter:image" content="https://arg-geo.github.io/conversor-gtm-utm/preview_v4.jpg">
-    <meta name="twitter:image:alt" content="Conversor de coordenadas GTM, UTM y WGS84 para Guatemala">
+        /* ===== 5. FORMULARIOS CON AIRE Y ORDEN ===== */
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 22px; /* Espacio amplio entre filas */
+        }
+        .form-group label {
+            font-weight: 600;
+            color: #334155;
+            margin-bottom: 10px; /* Separación entre el texto y su casilla */
+            font-size: 14px;
+        }
 
-    <script type="application/ld+json">
-    {
-      "@context":"https://schema.org",
-      "@type":"WebApplication",
-      "name":"Conversor de Coordenadas GTM Guatemala",
-      "applicationCategory":"UtilitiesApplication",
-      "operatingSystem":"Any",
-      "description":"Conversor de coordenadas GTM, UTM WGS84, UTM NAD27 y WGS84 para Guatemala.",
-      "inLanguage":"es",
-      "areaServed":"GT"
-    }
-    </script>
+        /* Estilo moderno para casillas de números y menús */
+        input[type="number"], select {
+            padding: 12px 14px;
+            border: 1px solid #cbd5e1;
+            border-radius: 6px;
+            font-size: 14px;
+            color: #334155;
+            background-color: #f8fafc; /* Fondo grisáceo limpio para los inputs */
+            transition: all 0.3s ease;
+        }
+        input[type="number"]:focus, select:focus {
+            border-color: #0d47a1;
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(13, 71, 161, 0.15); /* Brillo azul al hacer clic */
+            outline: none;
+        }
 
-    <script async src="https://www.googletagmanager.com/gtag/js?id=G-W6DKHP28GP"></script>
-    <script>
-      window.dataLayer = window.dataLayer || [];
-      function gtag(){dataLayer.push(arguments);}
-      gtag('js', new Date());
-      gtag('config', 'G-W6DKHP28GP');
-    </script>
+        /* Distribución en 3 columnas en computadora */
+        .form-row {
+            display: flex;
+            gap: 25px; 
+            margin-bottom: 10px;
+        }
+        .form-row .form-group {
+            flex: 1;
+        }
 
-    <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+        /* ======================================================= */
+        /* TRUCO PARA MÓVILES: Se activa en pantallas pequeñas     */
+        /* ======================================================= */
+        @media (max-width: 600px) {
+            .form-row {
+                flex-direction: column !important; /* Fuerza a que vayan uno abajo del otro */
+                gap: 15px; /* Reduce un poco el espacio para optimizar pantalla */
+            }
+            
+            .content {
+                padding: 20px; /* Reduce los márgenes de la tarjeta para ganar espacio */
+            }
 
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+            .inline-group {
+                flex-direction: column !important; /* El selector de decimales también se acomoda vertical */
+                align-items: flex-start !important;
+            }
+            
+            .inline-group select {
+                width: 100% !important; /* El selector ocupa todo el ancho en el celular */
+            }
+        }
+
+        /* Casillas de selección (Checkboxes) con color */
+        .checkbox-group {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 12px;
+            cursor: pointer;
+            margin: 15px 0;
+        }
+        .checkbox-group input[type="checkbox"] {
+            width: 19px;
+            height: 19px;
+            accent-color: #0d47a1; /* Pinta el cuadrito de check en azul */
+            cursor: pointer;
+        }
+        .checkbox-group label {
+            margin-bottom: 0;
+            cursor: pointer;
+            user-select: none;
+        }
+
+        /* Selector de decimales alineado horizontalmente */
+        .inline-group {
+            flex-direction: row !important;
+            align-items: center;
+            gap: 15px;
+            background-color: #f1f5f9; /* Fondo de bloque para destacar la opción */
+            padding: 12px 15px;
+            border-radius: 6px;
+        }
+        .inline-group label {
+            margin-bottom: 0;
+        }
+        .inline-group select {
+            width: 80px;
+            text-align: center;
+            background-color: #ffffff;
+        }
+
+        /* Personalización del botón de subir archivo nativo */
+        input[type="file"] {
+            font-size: 14px;
+            color: #64748b;
+        }
+        input[type="file"]::file-selector-button {
+            background: #0d47a1;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-weight: 600;
+            margin-right: 15px;
+            transition: background 0.2s;
+        }
+        input[type="file"]::file-selector-button:hover {
+            background: #0a3578;
+        }
+
+        /* ===== 6. BOTONES, CANVAS Y ADVERTENCIAS ===== */
+        .btn-principal {
+            background-color: #0d47a1;
+            color: white;
+            border: none;
+            padding: 14px 24px;
+            font-size: 16px;
+            font-weight: bold;
+            border-radius: 6px;
+            cursor: pointer;
+            width: 100%;
+            transition: background-color 0.2s;
+            margin-top: 15px;
+            box-shadow: 0 4px 6px rgba(13, 71, 161, 0.2);
+        }
+        .btn-principal:hover:not(:disabled) {
+            background-color: #0a3578;
+        }
+        .btn-principal:disabled {
+            background-color: #cbd5e1;
+            color: #94a3b8;
+            cursor: not-allowed;
+            box-shadow: none;
+        }
+
+        .canvas-container {
+            display: flex;
+            justify-content: center;
+            margin-top: 25px;
+        }
+        canvas {
+            border: 2px solid #cbd5e1;
+            background: #f8fafc;
+            border-radius: 6px;
+        }
+
+        /* La nota de advertencia en un color ámbar elegante */
+        .panel-advertencia {
+            background-color: #fffbeb; /* Fondo crema/amarillo suave */
+            border-left: 5px solid #d97706; /* Barra lateral naranja/ámbar de alerta */
+            padding: 18px;
+            margin-top: 25px;
+            border-radius: 0 6px 6px 0;
+            font-size: 14px;
+            color: #78350f; /* Texto café oscuro legible */
+            line-height: 1.6;
+        }
+
+				/* --- ESTILOS ADAPTADOS PARA EL FOOTER INSTITUCIONAL --- */
+        .site-footer {
+            background-color: #1e293b; /* bg-slate-800 */
+            color: #94a3b8; /* text-slate-400 */
+            padding: 24px 16px; /* py-6 px-4 */
+            font-size: 12px; /* text-xs */
+            border-top: 1px solid #334155; /* border-slate-700 */
+            margin-top: 40px;
+        }
+        .footer-container {
+            max-width: 896px; /* max-w-4xl */
+            margin: 0 auto;
+            text-align: center;
+        }
+        .footer-container p { margin: 6px 0; }
+        .footer-hr {
+            border: 0;
+            border-top: 1px solid #334155; /* border-slate-700 */
+            margin: 12px 0;
+        }
+        .footer-disclaimer {
+            color: #64748b; /* text-slate-500 */
+            font-weight: 500;
+            line-height: 1.625; /* leading-relaxed */
+        }
+        .footer-bottom {
+            color: #94a3b8;
+            font-weight: 500;
+            font-size: 11px;
+            display: flex;
+            flex-direction: row;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+            padding-top: 4px;
+        }
+        @media (max-width: 640px) {
+            .footer-bottom { flex-direction: column; }
+        }
+        .footer-contact-box {
+            background-color: #0f172a; /* bg-slate-900 */
+            padding: 4px 12px; /* py-1 px-3 */
+            border-radius: 2px; /* rounded-sm */
+            border: 1px solid #334155; /* border-slate-700 */
+        }
+        .footer-contact-box a {
+            color: #38bdf8; /* text-blue-400 */
+            text-decoration: none;
+            font-family: monospace;
+        }
+        .footer-contact-box a:hover { text-decoration: underline; }
+		
+    </style>
 </head>
+<body>
 
-<!--<body class="bg-slate-100 min-h-screen text-slate-800 font-sans relative">-->
+    <div class="header-institucional">
+        <h2>Polígonos y Tabla de azimut</h2>
+        <p>Polígono • Identificación y numeración de vértices<br>Tabla de azimut • Tabla a texto  •  CAD</p>
+    </div>
 
-        <body class="bg-slate-100 min-h-screen flex flex-col antialiased">
+    <div class="tabs-container">
+        <div class="tab active" onclick="switchTab('csv')">📄 Procesar CSV</div>
+        <div class="tab" onclick="switchTab('dxf')">📐 Procesar DXF</div>
+    </div>
 
-    <div id="modalAviso" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
-        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden transform transition-all scale-100">
-            <div class="bg-blue-900 p-4 text-white flex items-center justify-between">
-                <h3 class="font-bold text-sm tracking-wide uppercase">⚡ Aviso de Sincronización Inicial</h3>
-                <button onclick="cerrarModal()" class="text-blue-200 hover:text-white font-bold text-lg">&times;</button>
+    <div id="tab-csv" class="content active">
+        
+        <div class="form-group">
+            <label for="csvFile">Seleccionar archivo CSV sin encabezado (Num, X, Y):</label>
+            <input type="file" id="csvFile" accept=".csv,.txt">
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="csvInvertirSentido">
+            <label for="csvInvertirSentido">Invertir sentido de recorrido</label>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="csvRadioVertices">Radio círculo:</label>
+                <input type="number" id="csvRadioVertices" step="0.01" value="1.00">
             </div>
-            <div class="p-5 space-y-3">
-                <p class="text-sm text-slate-600 leading-relaxed">
-                    Estimado usuario, debido a las políticas de ahorro de energía del servidor, la <strong>primera transformación</strong> del día puede demorar entre 30 y 60 segundos mientras se levantan las matrices geodésicas.
-                </p>
-                <p class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 font-medium">
-                    ⚠️ Una vez realizada la primera operación, todas las consultas siguientes se procesarán de forma instantánea y en milisegundos.
-                </p>
+            <div class="form-group">
+                <label for="csvTxtVertices">Altura de Texto en Vértice:</label>
+                <input type="number" id="csvTxtVertices" step="0.01" value="1.50">
             </div>
-            <div class="bg-slate-50 p-3 px-5 flex justify-end border-t border-slate-100">
-                <button onclick="cerrarModal()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow uppercase tracking-wider">
-                    Entendido, Continuar
-                </button>
+            <div class="form-group">
+                <label for="csvTxtTabla">Altura de Texto en Tabla:</label>
+                <input type="number" id="csvTxtTabla" step="0.01" value="0.80">
             </div>
+        </div>
+
+        <div class="form-group inline-group">
+            <label for="csvDecimalesSegundos">Cantidad de Decimales para los Segundos:</label>
+            <select id="csvDecimalesSegundos">
+                <option value="0" selected>0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+            </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="csvGenerarTextoDoc" checked>
+            <label for="csvGenerarTextoDoc">Generar Texto de la Tabla de Azimut (.doc)</label>
+        </div>
+
+        <button id="csvDownloadBtn" class="btn-principal" disabled>Descargar Archivos</button>
+        
+        <div id="csvAlerta" class="alerta"></div>
+        <div id="csvInfo" class="panel" style="display:none;"></div>
+        
+        <div class="canvas-container">
+            <canvas id="csvCanvas" width="500" height="450"></canvas>
         </div>
     </div>
 
-    <header class="bg-blue-900 text-white shadow-md p-5 text-center">
-        <h1 class="text-xl font-bold tracking-tight">Conversor de coordenadas Guatemala</h1>
-        <p class="text-xs text-blue-200 mt-1 font-medium">Geográficas  • GTM • UTM WGS84 • UTM NAD27</p>
-             
-    </header>
+    <div id="tab-dxf" class="content">
+        
+        <div class="form-group">
+            <label for="dxfFile">Seleccionar DXF (Polilínea):</label>
+            <input type="file" id="dxfFile" accept=".dxf">
+        </div>
 
-    <nav class="max-w-6xl mx-auto mt-6 px-4 md:px-6">
-        <div class="flex items-center justify-between border-b border-slate-300 pb-0">
-            <div class="flex space-x-2">
-                <button id="btnTabInd" onclick="cambiarPestaña('individual')" class="py-2 px-4 text-sm font-bold border-b-2 border-blue-700 text-blue-700">
-                   ⚡ Transformación Individual
-                </button>
-                <button id="btnTabLote" onclick="cambiarPestaña('lote')" class="py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800">
-                    📂 Procesamiento Masivo (.CSV)
-                </button>
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="dxfInvertirSentido">
+            <label for="dxfInvertirSentido">Invertir sentido de recorrido</label>
+        </div>
+
+        <div class="form-row">
+            <div class="form-group">
+                <label for="dxfRadioVertices">Radio círculo:</label>
+                <input type="number" id="dxfRadioVertices" step="0.01" value="1.00">
             </div>
-
-            <div class="pb-2">
-                <a href="ayuda.html" target="_blank" onclick="gtag('event', 'consulta_ayuda', {'origen_clic': 'pestana_index'});" class="inline-flex items-center px-3 py-1.5 bg-slate-100 hover:bg-slate-200 active:bg-slate-300 text-slate-700 text-xs font-bold rounded-lg border border-slate-300 transition-all duration-150 shadow-sm">
-                    <i class="fa-solid fa-circle-question text-blue-700 mr-1.5 text-sm"></i> Guía Técnica v1.1
-                </a>
+            <div class="form-group">
+                <label for="dxfTxtVertices">Altura de Texto en Vértice:</label>
+                <input type="number" id="dxfTxtVertices" step="0.01" value="1.50">
+            </div>
+            <div class="form-group">
+                <label for="dxfTxtTabla">Altura de Texto en Tabla:</label>
+                <input type="number" id="dxfTxtTabla" step="0.01" value="0.80">
             </div>
         </div>
-    </nav>
 
-    <main class="max-w-6xl mx-auto p-4 md:p-6 grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div class="form-group inline-group">
+            <label for="dxfDecimalesSegundos">Cantidad de Decimales para los Segundos:</label>
+            <select id="dxfDecimalesSegundos">
+                <option value="0" selected>0</option>
+                <option value="1">1</option>
+                <option value="2">2</option>
+            </select>
+        </div>
+
+        <div class="form-group checkbox-group">
+            <input type="checkbox" id="dxfGenerarTextoDoc" checked>
+            <label for="dxfGenerarTextoDoc">Generar Texto de la Tabla de Azimut (.doc)</label>
+        </div>
+
+        <button id="dxfDownloadBtn" class="btn-principal" disabled>Descargar Archivos</button>
         
-        <section class="bg-white rounded-2xl shadow-sm p-5 border border-slate-200 md:col-span-1 h-fit space-y-4">
-            <h2 class="text-xs font-bold text-slate-400 uppercase tracking-wider border-b pb-2">Configuración Geodésica</h2>
+        <div id="dxfAlerta" class="alerta"></div>
+        <div id="dxfInfo" class="panel" style="display:none;"></div>
+        
+        <div class="canvas-container">
+            <canvas id="dxfCanvas" width="500" height="450"></canvas>
+        </div>
+
+        <div class="panel-advertencia">
+            <strong>⚠️ Nota de visualización:</strong> Debido a tolerancias de redondeo y diferencias en la interpretación matemática de vectores cortos (como ochavos o curvas de esquina), el visor web interactivo puede mostrar de forma eventual arcos orientados hacia el interior. Proceda con la descarga del archivo <strong>.dxf</strong>; los parámetros topológicos nativos se exportan de forma correcta y se mantendrán fieles a la geometría original en AutoCAD.
+        </div>
+    </div>
+
+
+	
+<footer class="site-footer">
+        <div class="footer-container">
+            <p>Procesamiento Avanzado de Datos Topográficos: Generación de Archivos DXF bajo Estándares CAD (Unidades en Metros)</p>
             
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Sistema de Origen</label>
-                <select id="srcDesde" onchange="adaptarFormulario()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="WGS84_DEC">WGS84 - Grados Decimales</option>
-                    <option value="WGS84_GMS">WGS84 - Grados, Minutos, Segundos (GMS)</option>
-                    <option value="GTM">GTM (Guatemala Transverse Mercator)</option>
-                    <option value="UTM_WGS84">UTM WGS84</option>
-                    <option value="UTM_NAD27">UTM NAD27 (Clarke 1866)</option>
-                </select>
-            </div>
-
-            <div id="wrapperZonaOrigen" class="hidden bg-amber-50 p-2.5 rounded-lg border border-amber-200">
-                <label class="block text-xs font-semibold text-amber-800 mb-1">Zona UTM de Origen (Aplica a todo el lote)</label>
-                <select id="valZonaOrigen" class="w-full bg-white border border-amber-300 rounded-md p-1.5 text-xs font-medium">
-                    <option value="15">Zona 15 Norte</option>
-                    <option value="16">Zona 16 Norte</option>
-                </select>
-            </div>
-
-            <div>
-                <label class="block text-xs font-semibold text-slate-600 mb-1">Sistema de Destino</label>
-                <select id="srcHasta" onchange="adaptarFormulario()" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm focus:ring-2 focus:ring-blue-500">
-                    <option value="GTM">GTM (Guatemala Transverse Mercator)</option>
-                    <option value="UTM_WGS84">UTM WGS84</option>
-                    <option value="UTM_NAD27">UTM NAD27 (Clarke 1866)</option>
-                    <option value="WGS84_DEC">WGS84 - Grados Decimales</option>
-                    <option value="WGS84_GMS" >WGS84 - Grados, Minutos, Segundos (GMS)</option>
-                </select>
-            </div>
-
-            <div id="wrapperZonaDestino" class="hidden bg-blue-50 p-2.5 rounded-lg border border-blue-200">
-                <label class="block text-xs font-semibold text-blue-800 mb-1">Zona UTM de Destino (Aplica a todo el lote)</label>
-                <select id="valZonaDestino" class="w-full bg-white border border-blue-300 rounded-md p-1.5 text-xs font-medium">
-                    <option value="15">Zona 15 Norte</option>
-                    <option value="16">Zona 16 Norte</option>
-                </select>
-            </div>
-
-            <hr class="border-slate-200" />
-
-            <div id="panelIndividual" class="space-y-4">
-                <div>
-                    <label id="lblC1" class="block text-xs font-semibold text-slate-500 mb-1">Longitud / Este (X)</label>
-                    <input type="text" id="valC1" oninput="escucharEntradaDinamica()" placeholder="-92.5" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-mono focus:ring-2 focus:ring-blue-500">
-                    <span id="previewGmsC1" class="hidden block text-[11px] font-mono text-blue-700 mt-1 bg-blue-50 p-1 px-2 rounded border border-blue-100"></span>
-                </div>
-                <div>
-                    <label id="lblC2" class="block text-xs font-semibold text-slate-500 mb-1">Latitud / Norte (Y)</label>
-                    <input type="text" id="valC2" oninput="escucharEntradaDinamica()" placeholder="15.0" class="w-full bg-slate-50 border border-slate-300 rounded-lg p-2 text-sm font-mono focus:ring-2 focus:ring-blue-500">
-                    <span id="previewGmsC2" class="hidden block text-[11px] font-mono text-blue-700 mt-1 bg-blue-50 p-1 px-2 rounded border border-blue-100"></span>
-                </div>
-                <button onclick="ejecutarTransformacion()" class="w-full bg-blue-700 hover:bg-blue-800 text-white font-bold text-sm p-3 rounded-xl shadow-md uppercase tracking-wider">
-                    Transformar Coordenada
-                </button>
-            </div>
-
-            <div id="panelLote" class="hidden space-y-4">
-                <div class="bg-blue-50 border border-blue-200 p-3 rounded-xl text-xs">
-                    <span class="font-bold text-blue-900 block mb-1">📋 Estructura de Columnas Requerida:</span>
-                    <p id="txtGuiaCsv" class="text-slate-700 font-medium">Cargando guía de ordenación...</p>
-                </div>
-                
-                <div class="bg-slate-50 p-3 rounded-xl border border-dashed border-slate-300 text-center">
-                    <label class="block text-xs font-bold text-slate-700 mb-2">Cargar Archivo .CSV</label>
-                    <input type="file" id="fileCsv" accept=".csv" class="block w-full text-xs text-slate-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-xs file:font-semibold file:bg-blue-50 file:text-blue-700 file:cursor-pointer hover:file:bg-blue-100" />
-                    <p class="text-[10px] text-slate-400 mt-2">Columnas requeridas: <code class="bg-slate-200 px-1 rounded">c1</code> y <code class="bg-slate-200 px-1 rounded">c2</code>. Máximo 25 puntos.</p>
-                </div>
-                <button onclick="ejecutarProcesamientoLote()" class="w-full bg-emerald-700 hover:bg-emerald-800 text-white font-bold text-sm p-3 rounded-xl shadow-md uppercase tracking-wider">
-                    Procesar Lote Masivo
-                </button>
-            </div>
-
-
+            <hr class="footer-hr">
             
-        </section>
-
-        <section class="md:col-span-2 space-y-6">
-            <div id="boxResultados" class="hidden bg-white border border-slate-200 rounded-2xl p-5 shadow-sm">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">Módulo de Salida</h3>
-                <div id="contenedorResultados" class="grid grid-cols-1 sm:grid-cols-2 gap-4"></div>
-            </div>
-
-            <div id="boxResultadosLote" class="hidden bg-white border border-slate-200 rounded-2xl p-5 shadow-sm space-y-4">
-                <div class="flex items-center justify-between border-b pb-2">
-                    <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider">Resultados del Procesamiento Masivo</h3>
-                    <button onclick="descargarReporteCsv()" class="bg-blue-800 hover:bg-blue-900 text-white font-bold text-xs px-3 py-1.5 rounded-lg flex items-center space-x-1 shadow">
-                        <span>📥 Descargar Reporte</span>
-                    </button>
-                </div>
-                <div class="overflow-x-auto max-h-60 rounded-xl border border-slate-200">
-                    <table class="w-full text-left border-collapse text-xs">
-                        <thead class="bg-slate-100 font-bold border-b border-slate-200 text-slate-600">
-                            <tr>
-                                <th class="p-2 text-center">Fila</th>
-                                <th class="p-2">Entrada C1 (X)</th>
-                                <th class="p-2">Entrada C2 (Y)</th>
-                                <th class="p-2">Resultado C1 (X)</th>
-                                <th class="p-2">Resultado C2 (Y)</th>
-                                <th class="p-2 text-center">Estado</th>
-                            </tr>
-                        </thead>
-                        <tbody id="tablaLoteCuerpo" class="divide-y divide-slate-100 font-mono"></tbody>
-                    </table>
-                </div>
-            </div>
-
-            <div id="boxMapa" class="hidden bg-white border border-slate-200 rounded-2xl p-4 shadow-sm">
-                <h3 class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-2">Visor Geográfico</h3>
-                <div id="mapa" class="w-full h-80 bg-slate-200 rounded-xl border border-slate-300"></div>
-            </div>
-        </section>
-    </main>
-
-<footer class="bg-slate-800 text-slate-400 py-6 text-xs px-4 mt-auto border-t border-slate-700">
-        <div class="max-w-4xl mx-auto text-center space-y-3">
-            <p>Parámetros Oficiales GTM: Meridiano Central: -90.5° | Factor de Escala: 0.9998 | Falso Este: 500,000m | Falso Norte: 0m</p>
-            
-            <hr class="border-slate-700 my-2">
-            
-            <p class="text-slate-500 font-medium leading-relaxed">
-                <strong>AVISO DE EXENCIÓN DE RESPONSABILIDAD:</strong> Este servicio web de conversión cartográfica se proporciona de forma gratuita y con fines exclusivamente informativos, académicos y de utilidad pública. El autor no asume ninguna responsabilidad legal, civil o administrativa por la exactitud, integridad o idoneidad técnica de los datos generados. Es responsabilidad exclusiva del usuario final contrastar y verificar los resultados frente a los marcos geodésicos de referencia oficiales correspondientes.
+            <p class="footer-disclaimer">
+                <strong>AVISO DE EXENCIÓN DE RESPONSABILIDAD:</strong> Este servicio web de procesamiento de polígonos, identificación y numeración de vértices, generación de tabla de azimut y generación de texto se proporciona de forma gratuita y con fines exclusivamente informativos, académicos y de utilidad pública. El autor no asume ninguna responsabilidad legal, civil o administrativa por la exactitud, integridad o idoneidad técnica de los productos generados: archivos .DXF o .DOC con el polígono y el texto generados. Es responsabilidad exclusiva del profesional o usuario final contrastar, verificar y validar los resultados frente a los levantamientos de campo y las normativas correspondientes vigentes.
             </p>
             
-            <hr class="border-slate-700 my-2">
+            <hr class="footer-hr">
             
-            <div class="text-slate-400 font-medium flex flex-col sm:flex-row justify-between items-center gap-3 pt-1 text-[11px]">
+            <div class="footer-bottom">
                 <span>🇬🇹 Servicio desarrollado por <strong>MSc Aldo González</strong></span>
-                <span class="bg-slate-900 px-3 py-1 rounded-sm border border-slate-700">
-                    📧 Soporte y Contacto: <a href="mailto:conversorgtm@gmail.com" class="text-blue-400 hover:underline font-mono">conversorgtm@gmail.com</a>
+                <span class="footer-contact-box">
+                    📧 Soporte y Contacto: <a href="mailto:conversorgtm@gmail.com">conversorgtm@gmail.com</a>
                 </span>
-                <!--<span>© 2026 Todos los derechos reservados.</span>-->
                 <span>&copy; <span id="anioDinamicoFooter"></span> Todos los derechos reservados.</span>
             </div>
         </div>
     </footer>
+	
+ <script>
 
+// Script para inicializar dinámicamente el año del Footer institucional
+        document.getElementById('anioDinamicoFooter').innerText = new Date().getFullYear();
 
-    
-    <script>
-        //const API_URL = "https://conversor-gtm-backend-1.onrender.com/api";
-        const API_URL = "https://conversor-gtm-utm-backend.onrender.com/api";
-        let mapa = null; let marcador = null;
-        let activeTab = 'individual';
-        let datosUltimoLoteProcesado = null; // Guardar caché para descarga diferida
+// --- CONFIGURACIÓN DE CONEXIÓN AL BACKEND ---
+        const BACKEND_URL = "https://poligono-azimut-backend.onrender.com";
+        const LIMITE_AREA_MAX = 300; 
 
-        function cerrarModal() { document.getElementById('modalAviso').classList.add('hidden'); }
+        let csvVerticesOriginales = [];
+        let csvVertices = [];
+        let dxfVerticesOriginales = [];
+        let dxfVertices = [];
 
-function cambiarPestaña(tab) {
-            activeTab = tab;
-            const btnInd = document.getElementById('btnTabInd');
-            const btnLote = document.getElementById('btnTabLote');
-            const pInd = document.getElementById('panelIndividual');
-            const pLote = document.getElementById('panelLote');
+        // Escuchas de Eventos de la Interfaz
+        document.getElementById('csvFile').addEventListener('change', leerCSV);
+        document.getElementById('csvDownloadBtn').addEventListener('click', descargarCSV);
+        document.getElementById('csvRadioVertices').addEventListener('input', cambiarSentidoCSV);
+        document.getElementById('csvTxtVertices').addEventListener('input', cambiarSentidoCSV);
+        document.getElementById('csvTxtTabla').addEventListener('input', cambiarSentidoCSV);
+        document.getElementById('csvInvertirSentido').addEventListener('change', cambiarSentidoCSV);
 
-            // Limpieza y reseteo de ventanas
-            document.getElementById('boxResultados').classList.add('hidden');
-            document.getElementById('boxResultadosLote').classList.add('hidden');
-            document.getElementById('boxMapa').classList.add('hidden');
-            if (mapa) { mapa.remove(); mapa = null; marcador = null; }
+        document.getElementById('csvDecimalesSegundos').addEventListener('change', cambiarSentidoCSV);
+        document.getElementById('dxfDecimalesSegundos').addEventListener('change', cambiarSentidoDXF);
 
-            if (tab === 'individual') {
-                btnInd.className = "py-2 px-4 text-sm font-bold border-b-2 border-blue-700 text-blue-700";
-                btnLote.className = "py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800";
-                pInd.classList.remove('hidden'); pLote.classList.add('hidden');
+        document.getElementById('dxfFile').addEventListener('change', leerDXF);
+        document.getElementById('dxfDownloadBtn').addEventListener('click', descargarDXF);
+        document.getElementById('dxfRadioVertices').addEventListener('input', cambiarSentidoDXF);
+        document.getElementById('dxfTxtVertices').addEventListener('input', cambiarSentidoDXF);
+        document.getElementById('dxfTxtTabla').addEventListener('input', cambiarSentidoDXF);
+        document.getElementById('dxfInvertirSentido').addEventListener('change', cambiarSentidoDXF);
+
+        function switchTab(tipo) {
+            document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+            document.querySelectorAll('.content').forEach(c => c.classList.remove('active'));
+            if(tipo === 'csv') {
+                document.querySelectorAll('.tab')[0].classList.add('active');
+                document.getElementById('tab-csv').classList.add('active');
             } else {
-                btnLote.className = "py-2 px-4 text-sm font-bold border-b-2 border-blue-700 text-blue-700";
-                btnInd.className = "py-2 px-4 text-sm font-semibold border-b-2 border-transparent text-slate-500 hover:text-slate-800";
-                pLote.classList.remove('hidden'); pInd.classList.add('hidden');
-            }
-
-            // Actualizar etiquetas informativas de entrada
-            if (typeof adaptarFormulario === 'function') {
-                adaptarFormulario();
+                document.querySelectorAll('.tab')[1].classList.add('active');
+                document.getElementById('tab-dxf').classList.add('active');
             }
         }
 
-
-function adaptarFormulario() {
-    const desde = document.getElementById('srcDesde').value;
-    const hasta = document.getElementById('srcHasta').value;
-
-    document.getElementById('previewGmsC1').classList.add('hidden');
-    document.getElementById('previewGmsC2').classList.add('hidden');
-
-    const txtGuia = document.getElementById('txtGuiaCsv');
-
-    if (desde === 'WGS84_DEC' || desde === 'WGS84_GMS') {
-        document.getElementById('lblC1').innerText = "Longitud (Grados Decimales)";
-        document.getElementById('lblC2').innerText = "Latitud (Grados Decimales)";
-        document.getElementById('valC1').placeholder = "-92.5";
-        document.getElementById('valC2').placeholder = "15.0";
+        // --- UTILERÍAS LOCALES DEL FRONTEND ---
+        function globalFormatearNumero(n) { return n.toLocaleString('es-GT', { minimumFractionDigits: 2, maximumFractionDigits: 2 }); }
+        function obtenerDistancia(p1, p2) { return Math.sqrt(Math.pow(p2.x - p1.x, 2) + Math.pow(p2.y - p1.y, 2)); }
         
-        // Guía para el CSV
-        if (txtGuia) {
-            txtGuia.innerHTML = `La columna <code class="bg-blue-100 font-mono px-1 rounded font-bold">c1</code> debe ser la <strong>Longitud (X)</strong>.<br>La columna <code class="bg-blue-100 font-mono px-1 rounded font-bold">c2</code> debe ser la <strong>Latitud (Y)</strong>.`;
-        }
-    } else {
-        document.getElementById('lblC1').innerText = `${desde} Coordenada Este - X (m)`;
-        document.getElementById('lblC2').innerText = `${desde} Coordenada Norte - Y (m)`;
-        document.getElementById('valC1').placeholder = "500000.000";
-        document.getElementById('valC2').placeholder = "1600000.000";
-        
-        // Guía para el CSV
-        if (txtGuia) {
-            txtGuia.innerHTML = `La columna <code class="bg-blue-100 font-mono px-1 rounded font-bold">c1</code> debe ser la coordenada <strong>Este / X (m)</strong>.<br>La columna <code class="bg-blue-100 font-mono px-1 rounded font-bold">c2</code> debe ser la coordenada <strong>Norte / Y (m)</strong>.`;
-        }
-    }
-
-    if (desde === 'UTM_WGS84' || desde === 'UTM_NAD27') document.getElementById('wrapperZonaOrigen').classList.remove('hidden');
-    else document.getElementById('wrapperZonaOrigen').classList.add('hidden');
-
-    if (hasta === 'UTM_WGS84' || hasta === 'UTM_NAD27') document.getElementById('wrapperZonaDestino').classList.remove('hidden');
-    else document.getElementById('wrapperZonaDestino').classList.add('hidden');
-
-    escucharEntradaDinamica();
-}
-
-        function limpiarYParsearGMS(str) {
-            let s = str.trim().replace(/,/g, '.'); if (!s) return NaN;
-            let partes = s.split(/\s+/); if (partes.length === 0) return NaN;
-            let d = parseFloat(partes[0]); if (isNaN(d)) return NaN;
-            let m = partes.length > 1 ? parseFloat(partes[1]) : 0;
-            let seg = partes.length > 2 ? parseFloat(partes[2]) : 0;
-            if (isNaN(m) || isNaN(seg)) return NaN;
-            let absVal = Math.abs(d) + (m / 60) + (seg / 3600);
-            return d < 0 ? (absVal * -1) : absVal;
+        function triggerDescarga(contenido, file, mime) {
+            const blob = new Blob([contenido], { type: mime });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url; a.download = file;
+            document.body.appendChild(a); a.click();
+            document.body.removeChild(a); URL.revokeObjectURL(url);
         }
 
-        function convertirDecimalAGMS(val, esLongitud) {
-            let n = parseFloat(val); if (isNaN(n)) return "";
-            let signo = n < 0 ? "-" : ""; let absVal = Math.abs(n);
-            let d = Math.floor(absVal); let remMin = (absVal - d) * 60; let m = Math.floor(remMin);
-            let s = ((remMin - m) * 60).toFixed(2);
-            if (parseFloat(s) >= 60) { s = (0).toFixed(2); m += 1; if (m >= 60) { m = 0; d += 1; } }
-            return `${signo}${d}° ${m}' ${s}" ${esLongitud ? "W" : "N"}`;
+        function sugerirEscalaValores(arreglo, prefixTab) {
+            const xs = arreglo.map(v => v.x), ys = arreglo.map(v => v.y);
+            const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+            const tamaño = Math.max(maxX - minX, maxY - minY);
+            
+            document.getElementById(`${prefixTab}RadioVertices`).value = (tamaño * 0.010).toFixed(2);
+            document.getElementById(`${prefixTab}TxtVertices`).value = (tamaño * 0.016).toFixed(2);
+            document.getElementById(`${prefixTab}TxtTabla`).value = (tamaño * 0.008).toFixed(2);
         }
 
-        function escucharEntradaDinamica() {
-            if (activeTab !== 'individual') return;
-            const desde = document.getElementById('srcDesde').value;
-            const c1_raw = document.getElementById('valC1').value.trim();
-            const c2_raw = document.getElementById('valC2').value.trim();
-            const p1 = document.getElementById('previewGmsC1'); const p2 = document.getElementById('previewGmsC2');
-
-            if (desde === 'WGS84_DEC') {
-                if (c1_raw && !isNaN(parseFloat(c1_raw))) { p1.innerText = convertirDecimalAGMS(c1_raw, true); p1.classList.remove('hidden'); } else p1.classList.add('hidden');
-                if (c2_raw && !isNaN(parseFloat(c2_raw))) { p2.innerText = convertirDecimalAGMS(c2_raw, false); p2.classList.remove('hidden'); } else p2.classList.add('hidden');
-            } else if (desde === 'WGS84_GMS') {
-                let dec1 = limpiarYParsearGMS(c1_raw);
-                if (c1_raw && !isNaN(dec1)) { p1.innerText = ` Equivalente Decimal: ${dec1.toFixed(8)}°`; p1.classList.remove('hidden'); } else p1.classList.add('hidden');
-                let dec2 = limpiarYParsearGMS(c2_raw);
-                if (c2_raw && !isNaN(dec2)) { p2.innerText = ` Equivalente Decimal: ${dec2.toFixed(8)}°`; p2.classList.remove('hidden'); } else p2.classList.add('hidden');
-            } else { p1.classList.add('hidden'); p2.classList.add('hidden'); }
-        }
-
-        function formatearMiles(val) { return new Intl.NumberFormat('en-US', { minimumFractionDigits: 3, maximumFractionDigits: 3 }).format(val); }
-
-        function levantarMapa(lat, lon) {
-            document.getElementById('boxMapa').classList.remove('hidden');
-            if (!mapa) {
-                mapa = L.map('mapa').setView([lat, lon], 8);
-                L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { maxZoom: 19 }).addTo(mapa);
-            } else { mapa.setView([lat, lon], 8); }
-            if (marcador) mapa.removeLayer(marcador);
-            marcador = L.marker([lat, lon]).addTo(mapa);
-            setTimeout(() => { mapa.invalidateSize(); }, 200);
-        }
-
-        // CONTROL PROCESAMIENTO MASIVO PARSER INTERNO .CSV
-        function parsearCSV(texto) {
-            const lineas = texto.split(/\r?\n/).map(l => l.trim()).filter(l => l.length > 0);
-            if (lineas.length < 2) return [];
-
-            // Identificar encabezados mapeando minúsculas
-            const encabezados = lineas[0].split(',').map(h => h.trim().toLowerCase());
-            const idxC1 = encabezados.indexOf('c1');
-            const idxC2 = encabezados.indexOf('c2');
-
-            if (idxC1 === -1 || idxC2 === -1) {
-                alert("El archivo .CSV debe contener las columnas 'c1' y 'c2' en el encabezado.");
-                return [];
-            }
-
-            const puntos = [];
-            for (let i = 1; i < lineas.length; i++) {
-                const columnas = lineas[i].split(',');
-                if (columnas.length <= Math.max(idxC1, idxC2)) continue;
-                puntos.push({
-                    id: i,
-                    c1_raw: columnas[idxC1].trim(),
-                    c2_raw: columnas[idxC2].trim()
+        // =========================================================================
+        // PROCESAMIENTO PESTAÑA CSV
+        // =========================================================================
+        function leerCSV(e) {
+            const f = e.target.files[0]; if(!f) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                csvVerticesOriginales = [];
+                document.getElementById('csvAlerta').style.display = 'none';
+                const lineas = evt.target.result.split(/\r?\n/);
+                lineas.forEach(l => {
+                    l = l.trim(); if(!l) return;
+                    const p = l.split(/[,;\t]/); if(p.length < 3) return;
+                    const num = p[0].trim(), x = parseFloat(p[1]), y = parseFloat(p[2]);
+                    if(!isNaN(x) && !isNaN(y)) csvVerticesOriginales.push({ numero: num, x, y, bulbo: 0 });
                 });
-            }
-            return puntos;
+                csvVerticesOriginales.sort((a,b) => Number(a.numero) - Number(b.numero));
+                
+                if(csvVerticesOriginales.length >= 3) {
+                    sugerirEscalaValores(csvVerticesOriginales, 'csv');
+                    document.getElementById('csvInvertirSentido').checked = false;
+                    cambiarSentidoCSV();
+                } else { alert("Estructura de CSV inválida."); }
+            };
+            reader.readAsText(f);
         }
 
- 
- async function ejecutarProcesamientoLote() {
-            const archivoInput = document.getElementById('fileCsv');
-            if (archivoInput.files.length === 0) { alert("Por favor seleccione un archivo .csv primero."); return; }
+        async function cambiarSentidoCSV() {
+            if(csvVerticesOriginales.length < 3) return;
+            
+            document.getElementById('csvAlerta').style.display = 'none';
+            document.getElementById('csvAlerta').innerText = '';
+            
+            if(document.getElementById('csvInvertirSentido').checked) {
+                let tmp = []; const n = csvVerticesOriginales.length;
+                for(let i=0; i<n; i++) {
+                    let oIdx = (n - i) % n;
+                    tmp.push({ numero: i.toString(), x: csvVerticesOriginales[oIdx].x, y: csvVerticesOriginales[oIdx].y, bulbo: 0 });
+                }
+                csvVertices = tmp;
+            } else { csvVertices = [...csvVerticesOriginales]; }
 
-            const desde = document.getElementById('srcDesde').value;
-            const hasta = document.getElementById('srcHasta').value;
-            const zonaOrigen = document.getElementById('valZonaOrigen').value;
-            const zonaDestino = document.getElementById('valZonaDestino').value;
+            try {
+                document.getElementById('csvInfo').innerHTML = "⏳ Procesando geometría en el servidor seguro...";
+                document.getElementById('csvInfo').style.display = 'block';
 
-            const archivo = archivoInput.files[0];
-            const lector = new FileReader();
+                const respuesta = await fetch(`${BACKEND_URL}/api/generar-dxf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vertices: csvVertices,
+                        radioCustom: parseFloat(document.getElementById('csvRadioVertices').value) || 1,
+                        txtVerticesCustom: parseFloat(document.getElementById('csvTxtVertices').value) || 1.5,
+                        txtTablaCustom: parseFloat(document.getElementById('csvTxtTabla').value) || 0.8,
+                        decimalesSegundos: parseInt(document.getElementById('csvDecimalesSegundos').value) || 0
+                    })
+                });
+                
+                const datos = await respuesta.json();
 
-            lector.onload = async function(e) {
-                const puntosRaw = parsearCSV(e.target.result);
-                if (puntosRaw.length === 0) return;
+                if (!respuesta.ok) {
+                    throw new Error(datos.error || "Error en la respuesta del servidor.");
+                }
 
-                if (puntosRaw.length > 25) {
-                    alert(`El archivo contiene ${puntosRaw.length} puntos. El límite máximo permitido para no sobrecargar el servidor es de 25 puntos.`);
-                    
-                    // --- TELEMETRÍA GA4: EXCESO DE LÍMITE RECHAZADO EN CLIENTE ---
-                    gtag('event', 'procesamiento_lote_limite', {
-                        'cantidad_puntos_intentados': puntosRaw.length,
-                        'sistema_origen': desde,
-                        'sistema_destino': hasta
-                    });
+                if(datos.areaCalculada > LIMITE_AREA_MAX) {
+                    document.getElementById('csvAlerta').innerText = `Error: El área calculada (${globalFormatearNumero(datos.areaCalculada)} m²) supera el límite de ${LIMITE_AREA_MAX} m².`;
+                    document.getElementById('csvAlerta').style.display = 'block';
+                    document.getElementById('csvDownloadBtn').disabled = true;
+                    document.getElementById('csvInfo').style.display = 'none';
+                    document.getElementById('csvCanvas').getContext('2d').clearRect(0,0,500,450);
                     return;
                 }
 
-                // Normalizar/Parsear el formato en el cliente si es GMS antes de enviar al lote
-                const puntosProcesados = puntosRaw.map(p => {
-                    let c1 = desde === 'WGS84_GMS' ? limpiarYParsearGMS(p.c1_raw) : parseFloat(p.c1_raw);
-                    let c2 = desde === 'WGS84_GMS' ? limpiarYParsearGMS(p.c2_raw) : parseFloat(p.c2_raw);
-                    return { id: p.id, c1, c2, c1_orig_str: p.c1_raw, c2_orig_str: p.c2_raw };
-                });
-
-                const boxResLote = document.getElementById('boxResultadosLote');
-                const tbody = document.getElementById('tablaLoteCuerpo');
-                tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center italic text-slate-500 animate-pulse">Procesando ráfaga masiva en el servidor geodésico...</td></tr>`;
-                boxResLote.classList.remove('hidden');
-
-                try {
-                    const response = await fetch(`${API_URL}/convertir-lote`, {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ puntos: puntosProcesados, desde, hasta, zonaOrigen, zonaDestino })
-                    });
-
-                    const r = await response.json();
-                    if (!r.exito) {
-                        tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center font-bold text-red-700">⚠️ Error en bloque: ${r.error}</td></tr>`;
-                        
-                        // --- TELEMETRÍA GA4: ERROR EN BLOQUE DEVUELTO POR BACKEND ---
-                        gtag('event', 'procesamiento_lote_error', {
-                            'tipo_error': 'error_bloque_backend',
-                            'mensaje_error': r.error || 'Desconocido',
-                            'sistema_origen': desde,
-                            'sistema_destino': hasta
-                        });
-                        return;
-                    }
-
-                    // Cruzar arrays para pintar resultados limpios en pantalla
-                    datosUltimoLoteProcesado = r.resultados.map((res, i) => {
-                        return {
-                            ...res,
-                            c1_orig_str: puntosProcesados[i].c1_orig_str,
-                            c2_orig_str: puntosProcesados[i].c2_orig_str
-                        };
-                    });
-
-                    // Extracción de estadísticas para métricas antes del bucle de renderizado
-                    const totalPuntos = datosUltimoLoteProcesado.length;
-                    const puntosAceptados = datosUltimoLoteProcesado.filter(p => p.exito).length;
-                    const puntosRechazados = datosUltimoLoteProcesado.filter(p => !p.exito).length;
-
-                    // --- TELEMETRÍA GA4: PROCESAMIENTO POR LOTES COMPLETADO CON ÉXITO ---
-                    gtag('event', 'procesamiento_lote_exito', {
-                        'sistema_origen': desde,
-                        'sistema_destino': hasta,
-                        'zona_origen': zonaOrigen,
-                        'zona_destino': zonaDestino,
-                        'total_puntos_procesados': totalPuntos,
-                        'puntos_aceptados': puntosAceptados,
-                        'puntos_rechazados': puntosRechazados
-                    });
-
-                    tbody.innerHTML = "";
-                    datosUltimoLoteProcesado.forEach(pt => {
-                        let colC1 = "-", colC2 = "-", badge = "";
-                        
-                        if (pt.exito) {
-                            // CORRECCIÓN MULTICRITERIO PARA INTERFAZ VISUAL EN PANTALLA
-                            if (hasta === 'WGS84_GMS') {
-                                // Formatear a texto sexagesimal legible (Grados, Minutos, Segundos)
-                                colC1 = convertirDecimalAGMS(pt.c1, true);  // Longitud
-                                colC2 = convertirDecimalAGMS(pt.c2, false); // Latitud
-                            } else if (hasta === 'WGS84_DEC') {
-                                // Mantener el estándar reglamentario de 8 decimales
-                                colC1 = pt.c1.toFixed(8);
-                                colC2 = pt.c2.toFixed(8);
-                            } else {
-                                // Sistemas proyectados (GTM/UTM): Exactamente 3 decimales fijos con comas de miles
-                                colC1 = formatearMiles(pt.c1.toFixed(3));
-                                colC2 = formatearMiles(pt.c2.toFixed(3));
-                            }
-                            
-                            badge = `<span class="bg-emerald-100 text-emerald-800 font-bold px-2 py-0.5 rounded text-[10px]">ACEPTADO</span>`;
-                        } else {
-                            badge = `<span class="bg-red-100 text-red-800 font-bold px-2 py-0.5 rounded text-[10px]" title="${pt.error}">RECHAZADO</span>`;
-                        }
-
-                        tbody.innerHTML += `
-                            <tr class="hover:bg-slate-50">
-                                <td class="p-2 text-center text-slate-400 font-bold border-r">${pt.id}</td>
-                                <td class="p-2 text-slate-600">${pt.c1_orig_str}</td>
-                                <td class="p-2 text-slate-600">${pt.c2_orig_str}</td>
-                                <td class="p-2 font-bold text-slate-900">${colC1}</td>
-                                <td class="p-2 font-bold text-slate-900">${colC2}</td>
-                                <td class="p-2 text-center">${badge}</td>
-                            </tr>`;
-                    });
-
-                } catch (err) {
-                    console.error("Error en procesamiento por lote:", err);
-                    tbody.innerHTML = `<tr><td colspan="6" class="p-4 text-center font-bold text-red-700">Fallo crítico de enlace con el API.</td></tr>`;
-                    
-                    // --- TELEMETRÍA GA4: FALLO CRÍTICO DE RED O TIMEOUT ---
-                    gtag('event', 'procesamiento_lote_error', {
-                        'tipo_error': 'falla_red_api',
-                        'sistema_origen': desde,
-                        'sistema_destino': hasta
-                    });
-                }
-            };
-
-            lector.readAsText(archivo);
-        }
- 
- 
- 
- function descargarReporteCsv() {
-            if (!datosUltimoLoteProcesado || datosUltimoLoteProcesado.length === 0) return;
-
-            const hasta = document.getElementById('srcHasta').value;
-            const zonaDestino = document.getElementById('valZonaDestino').value;
-
-            // Construir contenido del .CSV
-            let csvContenido = "id,c1_origen,c2_origen,c1_destino,c2_destino,estado_validacion\n";
-            datosUltimoLoteProcesado.forEach(pt => {
-                if (pt.exito) {
-                    let c1Dest, c2Dest;
-
-                    if (hasta === 'WGS84_GMS') {
-                        // Si el destino es GMS, inyectar el texto formateado sexagesimal en el CSV
-                        c1Dest = convertirDecimalAGMS(pt.c1, true);
-                        c2Dest = convertirDecimalAGMS(pt.c2, false);
-                    } else if (hasta === 'WGS84_DEC') {
-                        // 8 decimales fijos para grados decimales
-                        c1Dest = parseFloat(pt.c1).toFixed(8);
-                        c2Dest = parseFloat(pt.c2).toFixed(8);
-                    } else {
-                        // 3 decimales planos (sin comas de miles) para sistemas proyectados GTM/UTM
-                        c1Dest = parseFloat(pt.c1).toFixed(3);
-                        c2Dest = parseFloat(pt.c2).toFixed(3);
-                    }
-
-                    csvContenido += `${pt.id},${pt.c1_orig_str},${pt.c2_orig_str},${c1Dest},${c2Dest},APROBADO\n`;
-                } else {
-                    csvContenido += `${pt.id},${pt.c1_orig_str},${pt.c2_orig_str},,,RECHAZADO_${pt.error}\n`;
-                }
-            });
-            
-            // Obtener el año actual de forma automática
-            const anioActual = new Date().getFullYear();
-
-            // Agregar línea intermedia en blanco y pie de página oficial con el año dinámico
-            csvContenido += "\n";
-            csvContenido += `https://arg-geo.github.io/conversor-gtm-utm/   Todos los derechos reservados (${anioActual})\n`;
-
-            // Generar nombre dinámico estricto: SistemaDestino_Zona_Año_Mes_Día_Timestamp.csv
-            const ahora = new Date();
-            const yyyy = ahora.getFullYear();
-            const mm = String(ahora.getMonth() + 1).padStart(2, '0');
-            const dd = String(ahora.getDate()).padStart(2, '0');
-            const ts = ahora.getTime();
-
-            let txtZona = (hasta === 'UTM_WGS84' || hasta === 'UTM_NAD27') ? `_Z${zonaDestino}` : "";
-            let nombreArchivo = `${hasta}${txtZona}_${yyyy}_${mm}_${dd}_${ts}.csv`;
-
-            // --- TELEMETRÍA GA4: REGISTRO DE DESCARGA DE REPORTE MASIVO ---
-            gtag('event', 'descarga_reporte_csv', {
-                'sistema_destino': hasta,
-                'zona_destino': (hasta === 'UTM_WGS84' || hasta === 'UTM_NAD27') ? zonaDestino : 'N/A',
-                'total_puntos_guardados': datosUltimoLoteProcesado.length,
-                'puntos_aprobados_guardados': datosUltimoLoteProcesado.filter(p => p.exito).length,
-                'puntos_rechazados_guardados': datosUltimoLoteProcesado.filter(p => !p.exito).length,
-                'nombre_archivo_generado': nombreArchivo
-            });
-
-            // Trigger descarga web
-            const blob = new Blob([csvContenido], { type: 'text/csv;charset=utf-8;' });
-            const link = document.createElement("a");
-            if (link.download !== undefined) {
-                const url = URL.createObjectURL(blob);
-                link.setAttribute("href", url);
-                link.setAttribute("download", nombreArchivo);
-                link.style.visibility = 'hidden';
-                document.body.appendChild(link);
-                link.click();
-                document.body.removeChild(link);
+                document.getElementById('csvInfo').innerHTML = `Polígono cargado: ${csvVertices.length} vértices. Área: ${globalFormatearNumero(datos.areaCalculada)} m².`;
+                document.getElementById('csvInfo').style.display = 'block';
+                document.getElementById('csvDownloadBtn').disabled = false;
+                redibujarCSV();
+            } catch (e) {
+                document.getElementById('csvInfo').style.display = 'none';
+                document.getElementById('csvAlerta').innerText = `⚠️ Error de comunicación: No se pudo conectar con el servidor seguro. Detalles: ${e.message}`;
+                document.getElementById('csvAlerta').style.display = 'block';
+                console.error(e);
             }
         }
 
+        function redibujarCSV() {
+            if(csvVertices.length < 3) return;
+            const canvas = document.getElementById('csvCanvas'), ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            const xs = csvVertices.map(v => v.x), ys = csvVertices.map(v => v.y);
+            const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+            const margenExt = Math.max(maxX - minX, maxY - minY) * 0.15 || 5;
+            const escala = Math.min((canvas.width - 80)/(maxX - minX + margenExt), (canvas.height - 80)/(maxY - minY + margenExt));
+            const cX = (minX + maxX) / 2, cY = (minY + maxY) / 2;
 
-
-
-
-async function ejecutarTransformacion() {
-    let desde = document.getElementById('srcDesde').value;
-    const hasta = document.getElementById('srcHasta').value;
-    const c1_raw = document.getElementById('valC1').value.trim();
-    const c2_raw = document.getElementById('valC2').value.trim();
-    const zonaOrigen = document.getElementById('valZonaOrigen').value;
-    const zonaDestino = document.getElementById('valZonaDestino').value;
-
-    if (!c1_raw || !c2_raw) { alert("Complete los campos numéricos."); return; }
-
-    // Ocultar resultados previos y destruir instancias viejas del mapa de la sesión individual
-    document.getElementById('boxResultados').classList.add('hidden');
-    document.getElementById('boxMapa').classList.add('hidden');
-    if (mapa) { mapa.remove(); mapa = null; marcador = null; }
-
-    let c1 = desde === 'WGS84_GMS' ? limpiarYParsearGMS(c1_raw) : parseFloat(c1_raw);
-    let c2 = desde === 'WGS84_GMS' ? limpiarYParsearGMS(c2_raw) : parseFloat(c2_raw);
-
-    const boxRes = document.getElementById('boxResultados');
-    const container = document.getElementById('contenedorResultados');
-
-    if (isNaN(c1) || isNaN(c2)) {
-        container.innerHTML = `<div class="col-span-2 text-center text-red-700 font-bold text-sm">⚠️ Error en consistencia de datos de entrada.</div>`;
-        boxRes.className = "bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm";
-        boxRes.classList.remove('hidden');
-
-        // --- TELEMETRÍA GA4: ERROR DE PARSEO / ENTRADA INVÁLIDA ---
-        gtag('event', 'transformacion_individual_error', {
-            'tipo_error': 'consistencia_datos',
-            'sistema_origen': desde,
-            'sistema_destino': hasta
-        });
-        return;
-    }
-
-    try {
-        container.innerHTML = "<p class='col-span-2 text-center text-sm italic text-slate-500 animate-pulse font-medium'>Calculando y verifying coberturas espaciales...</p>";
-        boxRes.className = "bg-blue-50 border border-blue-200 rounded-2xl p-5 shadow-sm";
-        boxRes.classList.remove('hidden');
-
-        const response = await fetch(`${API_URL}/convertir-individual`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ c1, c2, desde, hasta, zonaOrigen, zonaDestino })
-        });
-
-        const r = await response.json();
-
-        if (!r.exito) {
-            container.innerHTML = `
-                <div class="col-span-2 text-center p-2">
-                    <p class="text-red-700 font-bold text-sm">⚠️ Coordenada Fuera de Límites Nacionales</p>
-                    <p class="text-slate-600 text-xs mt-1 max-w-md mx-auto">La proyección geográfica resultante excede los límites legales de Guatemala o no se corresponde con la cobertura de la zona UTM destino solicitada.</p>
-                </div>`;
-            boxRes.className = "bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm";
-
-            // --- TELEMETRÍA GA4: FILTRO GEOGRÁFICO ACTIVADO (RECHAZADO) ---
-            gtag('event', 'transformacion_individual_error', {
-                'tipo_error': 'fuera_de_limites',
-                'sistema_origen': desde,
-                'sistema_destino': hasta,
-                'zona_origen_intentada': zonaOrigen,
-                'zona_destino_intentada': zonaDestino
-            });
-            return;
-        }
-
-        const out = r.datos;
-        boxRes.className = "bg-white border border-slate-200 rounded-2xl p-5 shadow-sm";
-
-        // Renderizado del HTML de Resultados según el sistema destino
-        if (hasta === 'WGS84_DEC') {
-            container.innerHTML = `
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Longitud Decimal</span>
-                    <span class="text-slate-900 block font-mono font-bold text-base mt-0.5">${parseFloat(out.c1).toFixed(8)}°</span>
-                </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Latitud Decimal</span>
-                    <span class="text-slate-900 block font-mono font-bold text-base mt-0.5">${parseFloat(out.c2).toFixed(8)}°</span>
-                </div>`;
-        } else if (hasta === 'WGS84_GMS') {
-            container.innerHTML = `
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200 col-span-2 text-center">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">Posición Geográfica GMS</span>
-                    <span class="text-slate-900 block font-mono font-bold text-sm mt-1">${convertirDecimalAGMS(out.c1, true)}</span>
-                    <span class="text-slate-900 block font-mono font-bold text-sm mt-0.5">${convertirDecimalAGMS(out.c2, false)}</span>
-                </div>`;
-        } else {
-            // REQUISITO: Para sistemas proyectados (GTM / UTM) se configuran exactamente 3 dígitos decimales fijos
-            container.innerHTML = `
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">${hasta} Este (X)</span>
-                    <span class="text-emerald-700 block font-mono font-bold text-lg mt-0.5">${formatearMiles(parseFloat(out.c1).toFixed(3))} m</span>
-                </div>
-                <div class="bg-slate-50 p-3 rounded-xl border border-slate-200">
-                    <span class="block text-[10px] font-bold text-slate-400 uppercase tracking-wide">${hasta} Norte (Y)</span>
-                    <span class="text-emerald-700 block font-mono font-bold text-lg mt-0.5">${formatearMiles(parseFloat(out.c2).toFixed(3))} m</span>
-                </div>`;
-        }
-
-        // LÓGICA DE APERTURA EXCLUSIVA DEL MAPA PARA EL FORMULARIO INDIVIDUAL
-        let mapaLat = null;
-        let mapaLon = null;
-
-        if (hasta === 'WGS84_DEC' || hasta === 'WGS84_GMS') {
-            mapaLon = parseFloat(out.c1);
-            mapaLat = parseFloat(out.c2);
-        } else if (desde === 'WGS84_DEC' || desde === 'WGS84_GMS') {
-            mapaLon = c1;
-            mapaLat = c2;
-        } else if (out.lat !== undefined && out.lon !== undefined) {
-            mapaLat = parseFloat(out.lat);
-            mapaLon = parseFloat(out.lon);
-        }
-
-        if (mapaLat !== null && mapaLon !== null && !isNaN(mapaLat) && !isNaN(mapaLon)) {
-            document.getElementById('boxMapa').classList.remove('hidden');
-            levantarMapa(mapaLat, mapaLon);
+            function trans(v) { return { x: canvas.width / 2 + (v.x - cX) * escala, y: canvas.height / 2 - (v.y - cY) * escala }; }
             
-            // --- TELEMETRÍA GA4: INTERACCIÓN EXITOSA CON MAPA GENERADO ---
-            gtag('event', 'uso_mapa_control', {
-                'sistema_destino': hasta,
-                'origen_llamada': 'individual'
+            ctx.beginPath();
+            csvVertices.forEach((v,i) => { let p = trans(v); if(i===0) ctx.moveTo(p.x,p.y); else ctx.lineTo(p.x,p.y); });
+            ctx.closePath(); ctx.strokeStyle = 'blue'; ctx.stroke();
+
+            const radioCustom = parseFloat(document.getElementById('csvRadioVertices').value) || 1;
+            const txtVerticesCustom = parseFloat(document.getElementById('csvTxtVertices').value) || 1.5;
+            const radioCanvas = Math.max(4, radioCustom * escala);
+            const txtCanvasSize = Math.max(11, txtVerticesCustom * escala * 0.9);
+
+            csvVertices.forEach((v,i) => {
+                let p = trans(v); ctx.fillStyle = 'red'; ctx.beginPath(); ctx.arc(p.x,p.y,radioCanvas,0,2*Math.PI); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.font = `bold ${txtCanvasSize}px Arial`; ctx.fillText(i.toString(), p.x + radioCanvas + 3, p.y - 3);
             });
         }
 
-        // --- TELEMETRÍA GA4: TRANSFORMACIÓN INDIVIDUAL COMPLETADA CON ÉXITO ---
-        gtag('event', 'transformacion_individual', {
-            'sistema_origen': desde,
-            'sistema_destino': hasta,
-            'zona_origen': zonaOrigen,
-            'zona_destino': zonaDestino
-        });
+        async function descargarCSV() {
+            if(csvVertices.length < 3) return;
+            try {
+                const respuesta = await fetch(`${BACKEND_URL}/api/generar-dxf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vertices: csvVertices,
+                        radioCustom: parseFloat(document.getElementById('csvRadioVertices').value) || 0.10,
+                        txtVerticesCustom: parseFloat(document.getElementById('csvTxtVertices').value) || 0.16,
+                        txtTablaCustom: parseFloat(document.getElementById('csvTxtTabla').value) || 0.8,
+                        decimalesSegundos: parseInt(document.getElementById('csvDecimalesSegundos').value) || 0
+                    })
+                });
+                const datos = await respuesta.json();
+                
+                triggerDescarga(datos.dxfContenido, 'poligono_csv.dxf', 'application/dxf');
+                
+                const checkMinuta = document.getElementById('csvGenerarTextoDoc');
+                if (checkMinuta && checkMinuta.checked) {
+                    let contenidoHtml = datos.minutaTextoHtml;
+                    if (!contenidoHtml.startsWith('\ufeff')) {
+                        contenidoHtml = '\ufeff' + contenidoHtml;
+                    }
+                    triggerDescarga(contenidoHtml, 'minuta_csv.doc', 'application/msword;charset=utf-8');
+                }
+            } catch (err) { 
+                console.error(err);
+                alert("Error al descargar el archivo desde el servidor."); 
+            }
+        }
 
-    } catch (err) {
-        console.error("Error en transformación individual:", err);
-        container.innerHTML = "<p class='col-span-2 text-center text-sm font-bold text-red-700'>Error de comunicación de red con el API.</p>";
-        boxRes.className = "bg-red-50 border border-red-200 rounded-2xl p-5 shadow-sm";
+        // =========================================================================
+        // PROCESAMIENTO PESTAÑA DXF - CURVAS
+        // =========================================================================
+        function leerDXF(e) {
+            const f = e.target.files[0]; if(!f) return;
+            const reader = new FileReader();
+            reader.onload = function(evt) {
+                dxfVerticesOriginales = [];
+                document.getElementById('dxfAlerta').style.display = 'none';
+                const lines = evt.target.result.split(/\r?\n/).map(l => l.trim());
+                let i = 0, active = false, lX = [], lY = [], lB = [];
 
-        // --- TELEMETRÍA GA4: CAÍDA DEL BACKEND O RED ---
-        gtag('event', 'transformacion_individual_error', {
-            'tipo_error': 'falla_red_api',
-            'sistema_origen': desde,
-            'sistema_destino': hasta
-        });
-    }
-}
+                while(i < lines.length) {
+                    if(lines[i] === "0" && lines[i+1] === "LWPOLYLINE") { active = true; lX = []; lY = []; lB = []; i+=2; continue; }
+                    if(active) {
+                        if(lines[i] === "0" && (lines[i+1] === "LWPOLYLINE" || lines[i+1] === "ENDSEC" || lines[i+1] === "BRX_EVALUATOR")) {
+                            active = false; if(lX.length >= 3) break;
+                        } else {
+                            if(lines[i] === "10") lX.push(parseFloat(lines[i+1]));
+                            if(lines[i] === "20") lY.push(parseFloat(lines[i+1]));
+                            if(lines[i] === "42") lB[lX.length - 1] = parseFloat(lines[i+1]);
+                            i+=2; continue;
+                        }
+                    }
+                    i++;
+                }
 
-        adaptarFormulario();
-   
-    // Inyectar el año actual automáticamente en el footer
-    document.getElementById('anioDinamicoFooter').textContent = new Date().getFullYear();
-    </script>
+                if(lX.length >= 3) {
+                    for(let j=0; j<lX.length; j++) {
+                        dxfVerticesOriginales.push({ numero: j.toString(), x: lX[j], y: lY[j], bulbo: lB[j] || 0 });
+                    }
+                    sugerirEscalaValores(dxfVerticesOriginales, 'dxf');
+                    document.getElementById('dxfInvertirSentido').checked = false;
+                    cambiarSentidoDXF();
+                } else { alert("No se halló una LWPOLYLINE cerrada válida en las entidades."); }
+            };
+            reader.readAsText(f);
+        }
 
-   
+        async function cambiarSentidoDXF() {
+            if(dxfVerticesOriginales.length < 3) return;
+            document.getElementById('dxfAlerta').style.display = 'none';
+            
+            if(document.getElementById('dxfInvertirSentido').checked) {
+                let tmp = []; const n = dxfVerticesOriginales.length;
+                for(let i=0; i<n; i++) {
+                    let oIdx = (n - i) % n, bIdx = (n - i - 1) % n;
+                    tmp.push({ numero: i.toString(), x: dxfVerticesOriginales[oIdx].x, y: dxfVerticesOriginales[oIdx].y, bulbo: -dxfVerticesOriginales[bIdx].bulbo });
+                }
+                dxfVertices = tmp;
+            } else { dxfVertices = [...dxfVerticesOriginales]; }
+
+            try {
+                const respuesta = await fetch(`${BACKEND_URL}/api/generar-dxf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vertices: dxfVertices,
+                        radioCustom: parseFloat(document.getElementById('dxfRadioVertices').value) || 1,
+                        txtVerticesCustom: parseFloat(document.getElementById('dxfTxtVertices').value) || 1.5,
+                        txtTablaCustom: parseFloat(document.getElementById('dxfTxtTabla').value) || 0.8,
+                        decimalesSegundos: parseInt(document.getElementById('dxfDecimalesSegundos').value) || 0
+                    })
+                });
+                const datos = await respuesta.json();
+
+                if(datos.areaCalculada > LIMITE_AREA_MAX) {
+                    document.getElementById('dxfAlerta').innerText = `Error: El área calculada (${globalFormatearNumero(datos.areaCalculada)} m²) supera el límite de ${LIMITE_AREA_MAX} m².`;
+                    document.getElementById('dxfAlerta').style.display = 'block';
+                    document.getElementById('dxfDownloadBtn').disabled = true;
+                    document.getElementById('dxfInfo').style.display = 'none';
+                    document.getElementById('dxfCanvas').getContext('2d').clearRect(0,0,500,450);
+                    return;
+                }
+
+                document.getElementById('dxfInfo').innerHTML = `Polígono DXF: ${dxfVertices.length} vértices. Área: ${globalFormatearNumero(datos.areaCalculada)} m².`;
+                document.getElementById('dxfInfo').style.display = 'block';
+                document.getElementById('dxfDownloadBtn').disabled = false;
+                redibujarDXF();
+            } catch (e) { alert("Error de comunicación con el servidor seguro."); }
+        }
+
+        function redibujarDXF() {
+            if(dxfVertices.length < 3) return;
+            const canvas = document.getElementById('dxfCanvas'), ctx = canvas.getContext('2d');
+            ctx.clearRect(0,0,canvas.width,canvas.height);
+            const xs = dxfVertices.map(v => v.x), ys = dxfVertices.map(v => v.y);
+            const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+            const margenExt = Math.max(maxX - minX, maxY - minY) * 0.15 || 5;
+            const escala = Math.min((canvas.width - 80)/(maxX - minX + margenExt), (canvas.height - 80)/(maxY - minY + margenExt));
+            const cX = (minX + maxX) / 2, cY = (minY + maxY) / 2;
+
+            function trans(v) { return { x: canvas.width / 2 + (v.x - cX) * escala, y: canvas.height / 2 - (v.y - cY) * escala }; }
+
+            for(let i=0; i<dxfVertices.length; i++) {
+                let p1 = trans(dxfVertices[i]), p2 = trans(dxfVertices[(i+1)%dxfVertices.length]);
+                ctx.beginPath(); ctx.moveTo(p1.x, p1.y);
+                if(dxfVertices[i].bulbo && dxfVertices[i].bulbo !== 0) {
+                    let b = dxfVertices[i].bulbo, ch = obtenerDistancia(p1,p2);
+                    let rC = (ch * (1 + b*b)) / (4 * Math.abs(b)), sa = (ch/2)*b;
+                    let mx = (p1.x+p2.x)/2, my = (p1.y+p2.y)/2;
+                    let cx = mx - (-(p2.y - p1.y)/ch)*((rC - Math.abs(sa))*Math.sign(b));
+                    let cy = my - ((p2.x - p1.x)/ch)*((rC - Math.abs(sa))*Math.sign(b));
+                    ctx.arc(cx, cy, rC, Math.atan2(p1.y-cy, p1.x-cx), Math.atan2(p2.y-cy, p2.x-cx), b < 0);
+                } else { ctx.lineTo(p2.x, p2.y); }
+                ctx.strokeStyle = 'green'; ctx.stroke();
+            }
+
+            const radioCustom = parseFloat(document.getElementById('dxfRadioVertices').value) || 1;
+            const txtVerticesCustom = parseFloat(document.getElementById('dxfTxtVertices').value) || 1.5;
+            const radioCanvas = Math.max(4, radioCustom * escala);
+            const txtCanvasSize = Math.max(11, txtVerticesCustom * escala * 0.9);
+
+            dxfVertices.forEach((v,i) => {
+                let p = trans(v); ctx.fillStyle = 'blue'; ctx.beginPath(); ctx.arc(p.x,p.y,radioCanvas,0,2*Math.PI); ctx.fill();
+                ctx.fillStyle = '#000'; ctx.font = `bold ${txtCanvasSize}px Arial`; ctx.fillText(i.toString(), p.x + radioCanvas + 3, p.y - 3);
+            });
+        }
+
+        async function descargarDXF() {
+            if(dxfVertices.length < 3) return;
+            try {
+                const respuesta = await fetch(`${BACKEND_URL}/api/generar-dxf`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        vertices: dxfVertices,
+                        radioCustom: parseFloat(document.getElementById('dxfRadioVertices').value) || 1,
+                        txtVerticesCustom: parseFloat(document.getElementById('dxfTxtVertices').value) || 1.5,
+                        txtTablaCustom: parseFloat(document.getElementById('dxfTxtTabla').value) || 0.8,
+                        decimalesSegundos: parseInt(document.getElementById('dxfDecimalesSegundos').value) || 0
+                    })
+                });
+                const datos = await respuesta.json();
+                
+                triggerDescarga(datos.dxfContenido, 'poligono_curvas_procesado.dxf', 'application/dxf');
+                
+                if(document.getElementById('dxfGenerarTextoDoc').checked) {
+                    let textoValidoDXF = datos.minutaTextoHtml;
+                    if (!textoValidoDXF.startsWith('\ufeff')) {
+                        textoValidoDXF = '\ufeff' + textoValidoDXF;
+                    }
+                    triggerDescarga(textoValidoDXF, 'minuta_dxf.doc', 'application/msword;charset=utf-8');
+                }
+            } catch (err) { 
+                alert("Error al procesar la descarga desde el servidor."); 
+            }
+        }
+
+</script> 
+  
+  
+
+	
 </body>
 </html>
