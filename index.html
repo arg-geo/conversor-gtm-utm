@@ -63,33 +63,68 @@
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 </head>
+<!---    -->
 
-<!--<body class="bg-slate-100 min-h-screen text-slate-800 font-sans relative">-->
-
-        <body class="bg-slate-100 min-h-screen flex flex-col antialiased">
+ <body class="bg-slate-100 min-h-screen flex flex-col antialiased">
 
     <div id="modalAviso" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm flex items-center justify-center z-[9999] p-4">
         <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden transform transition-all scale-100">
             <div class="bg-blue-900 p-4 text-white flex items-center justify-between">
                 <h3 class="font-bold text-sm tracking-wide uppercase">⚡ Aviso de Sincronización Inicial</h3>
-                <button onclick="cerrarModal()" class="text-blue-200 hover:text-white font-bold text-lg">&times;</button>
+                <button onclick="cerrarPrimerModal()" class="text-blue-200 hover:text-white font-bold text-lg cursor-pointer">&times;</button>
             </div>
             <div class="p-5 space-y-3">
                 <p class="text-sm text-slate-600 leading-relaxed">
                     Estimado usuario, debido a las políticas de ahorro de energía del servidor, la <strong>primera transformación</strong> del día puede demorar entre 30 y 60 segundos mientras se levantan las matrices geodésicas.
                 </p>
                 <p class="text-xs text-amber-700 bg-amber-50 p-2.5 rounded-lg border border-amber-200 font-medium">
-                    ⚠️ Una vez realizada la primera operación, todas las consultas siguientes se procesarán de forma instantánea y en milisegundos.
+                    ⚠️ Una vez realizada la primera operation, todas las consultas siguientes se procesarán de forma instantánea y en milisegundos.
                 </p>
             </div>
             <div class="bg-slate-50 p-3 px-5 flex justify-end border-t border-slate-100">
-                <button onclick="cerrarModal()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow uppercase tracking-wider">
+                <button onclick="cerrarPrimerModal()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow uppercase tracking-wider cursor-pointer">
                     Entendido, Continuar
                 </button>
             </div>
         </div>
     </div>
 
+    <div id="modalPromocion" class="fixed inset-0 bg-slate-900/60 backdrop-blur-sm hidden items-center justify-center z-[9999] p-4">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-md w-full border border-slate-200 overflow-hidden transform transition-all scale-100">
+            <div class="bg-blue-900 p-4 text-white flex items-center justify-between">
+                <h3 class="font-bold text-sm tracking-wide uppercase flex items-center gap-2">
+                    📊 Dibujo y Cálculo de Polígonos
+                </h3>
+                <button onclick="cerrarSegundoModal()" class="text-blue-200 hover:text-white font-bold text-lg leading-none cursor-pointer">&times;</button>
+            </div>
+            
+            <div class="p-5 space-y-4">
+                <p class="text-sm text-slate-600 leading-relaxed">
+                    Estimado profesional, le invitamos a conocer nuestra herramienta automatizada para el <strong>cálculo de azimuts, distancias y generación de archivos DXF</strong> para AutoCAD de manera inmediata.
+                </p>
+                
+                <div class="text-sm text-blue-900 bg-blue-50/70 p-3 rounded-xl border border-blue-100 flex flex-col space-y-2">
+                    <span class="font-semibold text-xs text-blue-700 uppercase tracking-wider">📐 Módulo de Topografía Avanzado:</span>
+                    <p class="text-xs text-slate-700">
+                        Procese datos mediante archivos CSV y genere de forma automática tablas técnicas de rumbos y cálculos de áreas:
+                    </p>
+                    <a href="https://arg-geo.github.io/poligono-azimut/" target="_blank" class="text-blue-700 hover:text-blue-900 font-bold underline break-all text-xs flex items-center gap-1 mt-1">
+                        🚀 arg-geo.github.io/poligono-azimut/
+                    </a>
+                </div>
+            </div>
+            
+            <div class="bg-slate-50 p-3 px-5 flex justify-end border-t border-slate-100">
+                <button onclick="cerrarSegundoModal()" class="bg-blue-700 hover:bg-blue-800 text-white font-semibold text-xs px-4 py-2 rounded-lg shadow uppercase tracking-wider transition-colors cursor-pointer">
+                    Ingresar al Conversor
+                </button>
+            </div>
+        </div>
+    </div>   
+
+
+<!---    -->
+            
     <header class="bg-blue-900 text-white shadow-md p-5 text-center">
         <h1 class="text-xl font-bold tracking-tight">Conversor de coordenadas Guatemala</h1>
         <p class="text-xs text-blue-200 mt-1 font-medium">Geográficas  • GTM • UTM WGS84 • UTM NAD27</p>
@@ -265,7 +300,29 @@
         let activeTab = 'individual';
         let datosUltimoLoteProcesado = null; // Guardar caché para descarga diferida
 
-        function cerrarModal() { document.getElementById('modalAviso').classList.add('hidden'); }
+        //function cerrarModal() { document.getElementById('modalAviso').classList.add('hidden'); }
+
+        function cerrarPrimerModal() {
+            const modalAviso = document.getElementById('modalAviso');
+            const modalPromocion = document.getElementById('modalPromocion');
+            
+            if (modalAviso) {
+                modalAviso.style.display = 'none'; // Oculta el primer aviso
+            }
+            if (modalPromocion) {
+                // Quita la clase 'hidden' y usa flex para centrarlo correctamente
+                modalPromocion.classList.remove('hidden');
+                modalPromocion.style.display = 'flex'; 
+            }
+        }
+
+        function cerrarSegundoModal() {
+            const modalPromocion = document.getElementById('modalPromocion');
+            if (modalPromocion) {
+                modalPromocion.style.display = 'none'; // Cierra definitivamente e ingresa al conversor
+            }
+        }
+        
 
 function cambiarPestaña(tab) {
             activeTab = tab;
